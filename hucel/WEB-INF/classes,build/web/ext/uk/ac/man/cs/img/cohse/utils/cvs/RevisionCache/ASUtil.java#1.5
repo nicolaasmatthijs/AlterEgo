@@ -1,0 +1,252 @@
+/*
+ * ASUtils.java
+ * Created on August 14, 2005, 6:56 PM
+ * @author Yeliz Yesilada
+ */
+
+package uk.ac.man.cs.img.cohse.utils;
+
+import java.util.Vector;
+import java.lang.String;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.net.URLDecoder;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+import java.io.UnsupportedEncodingException;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
+import java.io.IOException;
+
+import uk.ac.man.cs.img.cohse.utils.COHSEAnnotation;
+
+/**
+ * Used to manage Annotation Service
+ * @author yeliz Yesilada
+ */
+public class ASUtil {
+    
+    private String annotationService = null;
+    
+    /** Creates a new instance of ASUtil */
+    public ASUtil(String url) {
+        this.annotationService = url;
+    }
+    
+    /**
+     *Given a URL and an ontology URI, it returns the appropriate annotations in the given annotation store
+     *@param url The URL of the page
+     *@param ontology The URI of the ontology
+     */
+    public COHSEAnnotation[] getDocumentAnnotations(String url, String ontology,String[] components) {
+        try {
+            Vector annotations = new Vector();
+            String componentsParam = "";
+            if(components!=null)
+                for(int i=0;i<components.length;i++){
+                componentsParam+= "&component="+components[i];
+                }//for
+            
+            //System.out.println("XSLTService - ASUTIl - Components Parameter: "+componentsParam);
+            String requestParameters = "request=retrieve&url=" +url+ "&ontology=" +ontology +componentsParam;
+            Document dom = getDOMResult(annotationService+"?"+requestParameters);
+            
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("ANNO");
+                for(int i=0; ts != null && i < ts.getLength(); i++) {
+                    Node node = ts.item(i);
+                    if(node.getNodeType() == Node.ELEMENT_NODE) {
+                        COHSEAnnotation a = new COHSEAnnotation();
+                        a.setURL(url);
+                        a.setConcept(((Element)node).getAttribute("concept"));
+                        a.setOntology(((Element)node).getAttribute("ontology"));
+                        a.setLocation(((Element)node).getAttribute("location"));                        
+                        a.setSource(((Element)node).getAttribute("source"));
+                        annotations.add(a);
+                    }//if
+                }//for
+                
+                COHSEAnnotation[] an = new COHSEAnnotation[0];
+                an = (COHSEAnnotation[]) annotations.toArray(an);
+                return an;
+            }//if
+            
+            return null;//new COHSEAnnotation[0];
+        }//try
+        catch(javax.xml.parsers.FactoryConfigurationError  e) {
+            System.err.println("FactoryConfigurationError: Could not create factory for parser document: " + e);
+            return new COHSEAnnotation[0];
+        }//catch
+        catch(Exception  e) {
+            System.err.println("ASUtil:  parsing XML document: " + e);
+            e.printStackTrace(System.err);
+            return new COHSEAnnotation[0];
+        }//catch
+    }//getDocumentannotations
+    
+    /**
+     *This method can be used to get annotations for a given concept and an ontology.
+     *@param concept the concept URL.
+     *@param ontology the URI of the ontology.
+     *@return it will return an array of COHSEAnnotations.
+     */
+    public COHSEAnnotation[] getAnnotations(String concept, String ontology, String[] components){
+        COHSEAnnotation[] an = null;
+        try {
+            Vector annotations = new Vector();
+            concept = URLEncoder.encode(concept, "UTF-8");
+            ontology = URLEncoder.encode(ontology, "UTF-8");
+            
+            StringBuffer componentBuffer = new StringBuffer();
+            if(components!=null)
+                for(int i=0;i<components.length;i++){
+                componentBuffer.append("&component=");
+                componentBuffer.append(components[i]);
+                }//for
+            String componentsParam = componentBuffer.toString();
+            
+            //System.out.println("XSLTService - AsUTIl - Components Parameter: "+componentsParam);
+            String requestParameters = "request=retrieve&concept=" + concept + "&ontology=" + ontology+componentsParam;
+            Document dom = getDOMResult(annotationService+"?"+requestParameters);
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("ANNO");
+                int length = 0;
+                if (ts != null) {
+                    length = ts.getLength();
+                }
+                an = new COHSEAnnotation[length];
+                for(int i=0; i < length ; i++) {
+                    Node node = ts.item(i);
+                    if(node.getNodeType() == Node.ELEMENT_NODE) {
+                        String url = ((Element)node).getAttribute("url");
+                        url = URLDecoder.decode(url,"UTF-8");
+                        COHSEAnnotation a = new COHSEAnnotation();
+                        a.setURL(url);
+                        a.setConcept(concept);
+                        a.setOntology(ontology);
+                        a.setLocation(((Element)node).getAttribute("location"));
+                        a.setDescription(((Element)node).getAttribute("description"));
+                        a.setSource(((Element)node).getAttribute("source"));
+                        an[i] = a;
+                    }//if
+                }//for
+                
+            }//if
+            return an;
+        } catch (FactoryConfigurationError  e) {
+            System.err.println("FactoryConfigurationError: Could not create factory for parser document: " + e);
+            return null;
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("UnsuppportedEncodingException: Cannot encode the given url and the ontology arguments");
+            return null;
+        } catch (Exception  e) {
+            System.err.println("ASUtil:  parsing XML document: " + e);
+            e.printStackTrace(System.err);
+            return null;
+        }//catch
+    }
+    
+    /**
+     *This method returns annotations for the given concept and the ontology that point to whole page
+     *@param concept
+     *@param ontology
+     *@return An array of COHSEAnnotations that are about whole pages.
+     */
+    public COHSEAnnotation[] getResources(String concept, String ontology, String[] components) {
+        Vector keep = new Vector();
+        COHSEAnnotation[] annos = getAnnotations(concept, ontology, components);
+        // We only want annotations about whole pages
+        for(int i=0; annos != null && i < annos.length; i++)
+            if(!annos[i].getURL().equals("") && annos[i].getLocation().equals(""))
+                keep.add(annos[i]);
+        if(keep.size() == 0)
+            return new COHSEAnnotation[0];
+        return (COHSEAnnotation[]) keep.toArray(new COHSEAnnotation[0]);
+    }
+    
+    /**
+     *This method returns annotations that point to parts of a page by using the concept and the given ontology.
+     *@param concept
+     *@param ontology
+     *@return An array of COHSEAnnotations are returned which point to parts of a page.
+     */
+    public COHSEAnnotation[] getXptrResources(String concept, String ontology, String[] components) {
+        Vector keep = new Vector();
+        COHSEAnnotation[] annos = getAnnotations(concept, ontology, components);
+        // We only want annotations about bits of a page
+        for(int i=0; annos != null && i < annos.length; i++)
+            if(!annos[i].getURL().equals("") && !annos[i].getLocation().equals(""))
+                keep.add(annos[i]);
+        
+        if(keep.size() == 0)
+            return new COHSEAnnotation [0];
+        return (COHSEAnnotation[]) keep.toArray(new COHSEAnnotation[0]);
+    }
+    
+    /**
+     *This will return a list of components that this annotation service knows about and they are ready to be used
+     *@return This returns a string array which holds all the component names.
+     */
+    public String[] getAllComponents() {
+        try{
+            String requestParameters = "request=rcomponents";
+            Document dom = getDOMResult(annotationService+"?"+requestParameters);
+            
+            String[] comps = null;
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("COMPONENT");
+                int length = 0;
+                if (ts != null) {
+                    length = ts.getLength();
+                }
+                comps = new String[length];
+                for(int i=0;  i < length; i++) {
+                    comps[i] = ts.item(i).getFirstChild().getNodeValue();
+                }//for
+            }
+            
+            return comps;
+        } catch (Exception e){
+            System.err.println("ASUTil - getAllComponents (): An error occured: " + e);
+            e.printStackTrace();
+            return null;
+        }//catch
+    }
+    
+    /**
+     *This will be used to parse the returned XML document from the annotation service
+     *@param arg This is the full url of the service that will be contacted.
+     *@return A Document will be returned that can be parsed.
+     */
+    public Document getDOMResult(String arg) throws IOException {
+        try {
+            javax.xml.parsers.DocumentBuilderFactory dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
+            javax.xml.parsers.DocumentBuilder builder = dbf.newDocumentBuilder();
+            Document result = builder.parse(arg);
+            return result;
+        }//try
+        catch(FactoryConfigurationError e) {
+            System.err.println("FactoryConfigurationError: Cannot instantiate the DocumentBuilderFactory");
+            return null;
+        }//catch
+        catch(ParserConfigurationException e){
+            System.err.println("ParserConfigurationException: Cannot create a new Document Builder");
+            return null;
+        }//catch
+        catch(SAXException e){
+            System.err.println("SAXException: Cannot parse the given argument");
+            return null;
+        }//catch
+        catch(IOException e){
+            System.err.println("IOException: Cannot access the given arg and parse the document");
+            throw e;
+            //return null;
+        }//catch
+    }//getDOMResult
+}//ASUtils

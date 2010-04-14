@@ -1,0 +1,702 @@
+/*
+ * Copyright (C) 2005 by the University of Manchester
+ *
+ * This software was written by Sean Bechhofer (seanb@cs.man.ac.uk)
+ * whilst at the University of Manchester
+ *
+ * The initial code base is copyright by the University
+ * of Manchester. Modifications to the initial code base are copyright
+ * of their respective authors, or their employers as appropriate. 
+ * Authorship of the modifications may be determined from the ChangeLog
+ * placed at the end of this file
+ *
+ * This software was developed as part of the OilEd editor. Further 
+ * information, and the latest version can be found at 
+ * http://oiled.man.ac.uk
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ */
+
+package uk.ac.man.cs.img.cohse.proxy;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.FileOutputStream;
+import java.net.URL;
+
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpServletRequest;
+import org.w3c.dom.*;
+
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+import java.util.TreeSet;
+import java.util.Iterator;
+import java.util.Hashtable;
+import java.util.Vector;
+import java.util.HashSet;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
+import java.util.HashMap;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
+
+import uk.ac.man.cs.img.cohse.utils.KnowledgeServiceUtil;
+import uk.ac.man.cs.img.cohse.utils.ASUtil;
+import uk.ac.man.cs.img.cohse.utils.LinkUtil;
+
+/**
+ *GenericLinkTransformer provides functionalities to add COHSE links to a given DOM object.
+ *
+ *@author Yeliz Yesilada
+ **/
+public class GenericLinkTransformer implements ProxyTransformer
+{
+    
+    //List of tags that will not be modified
+    protected static final HashSet STOP_WORDS = new HashSet(4);    
+    static{
+        STOP_WORDS.add("code");
+        STOP_WORDS.add("head");
+        STOP_WORDS.add("script");
+        STOP_WORDS.add("head"); 
+    }
+    final protected int UPPER_LIMIT = 1500;
+    
+    //URL to the resources
+    protected String serviceURL = "";
+    
+    private InputStream in;
+    private OutputStream out;
+    private int charsRead;
+    private int charsWritten;
+    
+    //This is the Dom object that wil be used to add COHSE links
+    protected org.w3c.dom.Document dom = null;
+  
+    //Ontology URI and we will also cache the previous ontology URI 
+    protected String ont = null;
+    protected String previousOnt = null;
+    
+    //Annotation Service URL and will also cache the previous URL
+    protected String as = null;
+    protected String previousAS = null;
+    
+    //Annotation Service components
+    protected String ASComp = null;
+    protected String previousASComp = null;
+    
+    //Ontology Service URL and will also cache the previous URL
+    protected String os = null;
+    protected String previousOS = null;
+
+    //This will be used to customisa the uniqueness of the terms.
+    protected String unique_concepts = null;
+    
+    //This will be used to display information about the sources of the suggested resources
+    protected String source_info = null;    
+        
+    //Link embelishment technique, can be overlay, icon, etc.
+    protected String linkEmbelTech = null;
+    
+    protected String linkBoxTech = null;
+    
+    //This will be used to keep track of the patterns created from the given ontology
+    //If the number of concepts in an ontoloyg is smaller than the UPPER_LIMIT, then only one pattern will be created
+    //Otherwise a list of patterns will be created that contains terms as much as UPPER_LIMIT
+    protected HashSet patternSet = null;
+     //Pattern that will be used to process text nodes
+    protected Pattern pattern = null;
+    
+    //OntologyService that will be used
+    protected KnowledgeServiceUtil os_Service = null;
+    
+    //AnnotationService that will be used
+    protected ASUtil as_Service = null;
+
+    //Linkservice that will be used
+    protected LinkUtil link_Service = null;
+    
+    public LinkUtil getLinkService(){
+    //Page URL
+        return this.link_Service;
+    }
+    //Cache for the unique terms
+    protected HashSet unique_concepts_cache = new HashSet();
+    
+    //Used to give a unique id to the span elements and div boxes
+    protected int spanCounter = 0; 
+    
+    protected String pageURL = null;
+    
+    /** Set the input stream */
+    public void setInputStream( InputStream in ) {
+	this.in = in;
+    }
+
+    /** Set the output stream */
+    public void setOutputStream( OutputStream out ) {
+	this.out = out;
+    }
+    
+    public int charsRead() {
+	return charsRead;
+    }
+
+    public int charsWritten() {
+	return charsWritten;
+    }
+    
+    //Set the DOM object
+    public void setDom(org.w3c.dom.Document doc){
+        this.dom = doc;
+    }
+    
+    //Get the DOM object
+    public org.w3c.dom.Document getDom(){
+        return this.dom;
+    }
+
+   /** Perform filtering/transformation */
+    public void transform() throws Exception {	
+    }
+    
+    /**
+     *This is the main method that does the DOM transformation.
+     *@param request An HttpServletRequest that is mainly used to access the Session object
+     *@param pageURL This is the URL of the current page. 
+     */
+    public void transformDom(HttpServletRequest request, String pageURL, ResourceBundle properties) throws Exception{
+      
+        this.pageURL = pageURL;
+        HttpSession session = request.getSession();
+                
+        if(session==null){
+           System.err.println("Session is null, so the dom object will not be modified");            
+           return;
+        } else{    
+            //Ontology
+            ont = (String)session.getAttribute("ont");
+            if(ont==null){
+                ont = this.getProperty(properties, "ontology");
+                System.out.println("Ontology from COHSEPortlet.properties file is: "+ont);
+            }
+            else{
+                System.out.println("Ontology from preferences: "+ont);
+            }
+            
+            //Annotation Service
+            as = (String)session.getAttribute("antSrv");
+            if(as==null){
+                as = this.getProperty(properties, "annotation-service");
+                System.out.println("Annotation Service from COHSEPortlet.properties file is: "+as);
+            }
+            else{
+                System.out.println("Annotation from preferences: "+as);
+            }
+            
+            //Ontology Service
+            os = (String)session.getAttribute("ontSrv");
+            if(os==null){
+                os = this.getProperty(properties, "ontology-service");
+                System.out.println("Ontology Service from COHSEPortlet.properties file is: "+os);
+            }
+            else{
+                System.out.println("Ontology Service from preferences: "+os);
+            }               
+            
+            //Link Embel Tech
+            linkEmbelTech = (String)session.getAttribute("linkEmbelTech");
+            if(linkEmbelTech==null){
+                linkEmbelTech = this.getProperty(properties, "link-embelishment-technique");
+                System.out.println("Link embelishment technique from COHSEPortlet.properties file is: "+linkEmbelTech);
+            }
+            else{
+                System.out.println("Link embelishment technique from preferences: "+linkEmbelTech);
+            } 
+            
+            linkBoxTech = (String)session.getAttribute("linkBoxTech");
+            if(linkBoxTech==null){
+                linkBoxTech = this.getProperty(properties, "link-box-technique");
+                System.out.println("Link box presentation technique from COHSEPortlet.properties file is: "+linkBoxTech);
+            }
+            else{
+                System.out.println("Link box presentation technique from preferences: "+linkBoxTech);
+            } 
+            
+            ASComp = (String)session.getAttribute("ASComp");
+            if(ASComp==null){
+                ASComp = this.getProperty(properties, "annotation-service-components");
+                System.out.println("Annotation service components from COHSEPortlet.properties file is: "+ASComp);
+            }
+            else{
+                System.out.println("Annotation service components from preferences: "+ASComp);
+            } 
+            
+            unique_concepts = (String) session.getAttribute("uniqueConcepts");
+            if(unique_concepts==null){
+                unique_concepts = this.getProperty(properties,"unique_concepts");
+                System.out.println("Unique_concepts from COHSEPortlet.preferences file is: "+unique_concepts);
+            }//if
+            else{
+                System.out.println("Unique_concepts from preferences file is: "+unique_concepts);
+            }
+            
+            source_info = (String) session.getAttribute("sourceInfo");
+            if(source_info==null){
+                source_info = this.getProperty(properties,"source_info");
+                System.out.println("Source_info from COHSEPortlet.preferences file is: "+source_info);
+            }//if
+            else{
+                System.out.println("Source_info from preferences file is: "+source_info);
+            }
+        }//else
+        
+        if(session!= null && as==null && os ==null){
+           System.err.println("Can't get the Annotation and Ontology Services.");           
+           return;
+        }//if
+        else{            
+            if (request.getServerPort() > -1) {
+                serviceURL = "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+                      
+            } else {
+                serviceURL = "http://" + request.getServerName() + request.getContextPath();
+            }            
+            /**
+             *ASUtil, OSUtil and LinkUtil are used as wrapper classes.
+             *Therefore before we create instances of these classes,
+             *we check if they have changed or not.
+             *If they haven't changed then we will continue to use the previous objects.
+             */          
+            if(previousAS == null || !previousAS.equals(as)){           
+                //Initialise the annotation service
+                this.as_Service = new ASUtil(as);                
+                if(link_Service!=null){
+                    this.link_Service.setASUtil(this.as_Service);
+                }                
+                previousAS = as;
+            }//if
+            
+            if(previousOS == null || !previousOS.equals(os)){
+                 //Instantiate the ontology service
+                this.os_Service = new KnowledgeServiceUtil(os,true);
+                if(link_Service!=null){
+                    this.link_Service.setOSUtil(this.os_Service);
+                }
+                previousOS = os;
+            }
+                        
+            if(previousOnt==null || !previousOnt.equals(ont)){  
+                //create the pattern that will be used to process the text nodes
+                this.patternSet = createPattern(ont);    
+                if(link_Service!=null){
+                    this.link_Service.setOntology(ont);
+                }
+                previousOnt = ont;
+            }
+            
+            if(previousASComp == null || !previousASComp.equals(ASComp)){
+                if(this.link_Service != null){
+                    this.link_Service.setComponents(ASComp.split(","));
+                    this.link_Service.clearCaches();
+                }
+                previousASComp = ASComp;
+            }
+            
+            if(link_Service == null){
+                //Initialise the link service
+                this.link_Service = new LinkUtil(dom,this.os_Service,ont,this.as_Service,ASComp.split(","));
+                this.link_Service.setServiceURL(this.serviceURL);
+                System.out.println("Service URL: "+this.serviceURL);
+                System.out.println("Service URL from LinUTIL: "+LinkUtil.serviceURL);
+            }           
+            //Changing the presentation style of the linkBoxTech
+            this.link_Service.setLinkBoxTech(this.linkBoxTech);
+            //Set the source_info 
+            this.link_Service.setSourceInfo(this.source_info);            
+            
+            //Initialise the spanCounter
+            this.spanCounter=0;
+            
+            //Clear unique concepts cache
+            if(unique_concepts_cache!=null)
+                unique_concepts_cache.clear();
+            
+            //Recursively get all the tex nodes and then do the pattern matching to add linkboxes
+            inspectChildren(this.dom.getDocumentElement());
+            //Add necessary Javascript and CSS file pointers to the head
+            addResources();
+            //Overlib library requires an empty div box in the page so we will try to add that
+            addOverlibBox();
+        }//else         
+    }//transformDom
+    
+    /**
+     *This methhod recursively traverses a DOM tree to identify text nodes.
+     *<p>
+     *These text nodes are then analysed by Regex to add COHSE links.
+     *@param parent A node that will be analysed for its text nodes. Inially it starts with the document node.
+     */
+    public void inspectChildren(org.w3c.dom.Node parent) {
+        if( (parent == null) || (isStopTag(parent.getNodeName())))
+            return;
+        org.w3c.dom.Node child = parent.getFirstChild();
+        while(child != null){
+            String name = child.getNodeName();
+            if(name == null) {
+                child = child.getNextSibling();
+                continue;
+            }//if
+            
+            if(child.getNodeType() == org.w3c.dom.Node.TEXT_NODE) {
+                addLinks(this.dom,child);
+            } //if
+            else {
+                inspectChildren(child);
+            }//else
+            
+            child = child.getNextSibling();
+        }//while
+    }//inspectChildren
+    
+    /**
+     *This method is used to add links to a text node.
+     *@param textNode Is the node that will be augmented with extra links.
+    */
+    public void addLinks(org.w3c.dom.Document dom, Node textNode){
+
+        //Try to find occurances of the concepts from the ontology
+        try{
+            //If for some reason we couldn't create the pattern, then return the node as it is
+            if(patternSet==null){
+                return;
+            }//if
+            else{
+                org.w3c.dom.Node afters = textNode;
+                Iterator patternSetItr = patternSet.iterator();
+                //If there is only one pattern then don't worry about the way a text node is modified
+                if(patternSet.size()==1){
+                    while( patternSetItr.hasNext() ) {
+                        pattern = (Pattern) patternSetItr.next();
+                        Matcher matcher = pattern.matcher(textNode.getNodeValue());
+                        while(matcher.find()){
+                            //Check if the unique_concepts is on or not
+                            if(unique_concepts.equals("true")){
+                                //if it is true then check if we have already annotated this term
+                                if(!unique_concepts_cache.contains(matcher.group().toLowerCase())){
+                                    afters = addLink(afters, matcher.start(), matcher.end(), matcher.group());
+                                    unique_concepts_cache.add(matcher.group().toLowerCase());
+                                    if(afters!=null){
+                                        matcher = pattern.matcher(afters.getNodeValue()); //reset the matcher
+                                    }//if
+                                }//if
+                            }//if
+                            else{
+                                afters = addLink(afters, matcher.start(), matcher.end(), matcher.group());
+                                if(afters!=null){
+                                    matcher = pattern.matcher(afters.getNodeValue()); //reset the matcher
+                                }//if
+                            }//else
+                        }//while
+                    }//while
+                }//if
+                //There are more than one pattern, then we first match all the terms and then try to modify the text node
+                else{
+                    //This will store all the terms that will be identified by using all the patterns in our patternSet
+                    Hashtable terms = new Hashtable();
+                    while( patternSetItr.hasNext() ) {
+                        pattern = (Pattern) patternSetItr.next();
+                        Matcher matcher = pattern.matcher(textNode.getNodeValue());
+                        while(matcher.find()){
+                            //If the unique_concepts is true then first check if we have included it or not
+                            if(unique_concepts.equals("true")){
+                                if(!unique_concepts_cache.contains(matcher.group().toLowerCase())){
+                                    unique_concepts_cache.add(matcher.group().toLowerCase());
+                                    terms.put(new Integer(matcher.start()),matcher.group());
+                                }//if
+                            } else{
+                                //If a term is identified then store the term and it's starting point
+                                terms.put(new Integer(matcher.start()),matcher.group());
+                            }//else
+                        }//while
+                    }
+                    //Try to sort all the identified terms according to their starting point
+                    Vector identifiedTerms = new Vector(terms.keySet());
+                    if(identifiedTerms.size()>0){
+                        Collections.sort(identifiedTerms);
+                        int previousEnd = 0;
+                        //Try to add a span tag and related material for each of the identified terms
+                        for (Enumeration e = identifiedTerms.elements(); e.hasMoreElements();) {
+                            Integer key = (Integer)e.nextElement();
+                            int start = key.intValue();
+                            String match = (String)terms.get(key);
+                            int end = start + match.length();
+                            start = start - previousEnd;
+                            int temp = end;
+                            end = end - previousEnd;
+                            previousEnd=temp;
+                            afters = addLink(afters, start, end, match);
+                        }//for
+                    }//if
+                }//else
+            }//else
+        }//try
+        //if we have difficulty doing regex then this will return the node as it is
+        catch(Exception e ){
+            System.err.println("There is a problem with the Regex: " + e);
+        }//catch
+    }//addLinks
+
+    /**
+     *This method is used to add links to a text node.
+     *@return A node that has the modified textNode as a child.
+     */
+    public org.w3c.dom.Text addLink(org.w3c.dom.Node afters, int start, int end, String match){
+        org.w3c.dom.Node parent = afters.getParentNode();
+	String text = afters.getNodeValue();
+	Text beforenode = dom.createTextNode(text.substring(0, start));
+	Text afternode = dom.createTextNode(text.substring(end));
+	
+        //This will replace line breaks between the terms to an ordinary space
+	match = match.replaceAll("\\n|\\t|\\r", " ");
+        //get the Div id of the div element
+	int divId = link_Service.getLinkBoxId(dom,match,pageURL);
+        //create the span to highlight this text
+	org.w3c.dom.Element highlight = dom.createElement("span");
+        //Add the match string to the highlight node
+        highlight.appendChild(dom.createTextNode(match));
+	spanCounter++;
+        highlight.setAttribute("id", "span"+spanCounter);
+        highlight.setAttribute("style","display:inline;");
+        
+        if (linkEmbelTech.equals("icon")){
+            Element img = dom.createElement("img");
+            img.setAttribute("src",serviceURL+"/resources/info.gif");
+            img.setAttribute("onmouseover","highlight('span"+spanCounter+"')");
+            img.setAttribute("onmouseout","unhighlight('span"+spanCounter+"')");
+            img.setAttribute("onclick","linkbox("+divId+",this.parentNode); return false;");
+            img.setAttribute("class","cohseIcon");
+            highlight.appendChild(img);
+        }//if
+        else{
+            highlight.setAttribute("class",linkEmbelTech);
+            highlight.setAttribute("onmouseover","highlight('span"+spanCounter+"')");
+            highlight.setAttribute("onmouseout","unhighlight('span"+spanCounter+"')"); 
+            highlight.setAttribute("onclick","linkbox("+divId+",this.parentNode); return false;");
+        }//else
+
+	parent.replaceChild(afternode,afters);
+	parent.insertBefore(highlight, afternode);
+	parent.insertBefore(beforenode, highlight);        
+	return afternode;
+    }//addLink
+    
+    /**
+     *This adds necessary javascript and CSS files to the head node of the given DOM.
+     */
+    public void addResources(){
+        org.w3c.dom.Element html = this.dom.getDocumentElement();
+        NodeList headList = html.getElementsByTagName("head");
+        org.w3c.dom.Node head = headList.item(0);
+        
+        String cssFileLocation = serviceURL+"/resources/cohse.css";        
+        Element link = dom.createElement("link");
+        link.setAttribute("rel", "stylesheet");
+        link.setAttribute("type","text/css");
+        link.setAttribute("href",cssFileLocation);
+        head.appendChild(link);
+        
+        Element kainLocation = dom.createElement("script");
+        kainLocation.setAttribute("language", "Javascript");
+        kainLocation.appendChild(dom.createTextNode("var service = \""+serviceURL+"\";"));
+        head.appendChild(kainLocation);
+        
+        String jsFileLocation = serviceURL+"/resources/cohse.js";        
+        Element script = dom.createElement("script");
+        script.setAttribute("language", "Javascript");
+        script.setAttribute("type","text/javascript");
+        script.setAttribute("src",jsFileLocation);
+        script.appendChild(dom.createTextNode(""));
+        head.appendChild(script);
+        
+        String overlibFileLocation = serviceURL+"/resources/overlib.js";        
+        Element scriptOverlib = dom.createElement("script");
+        scriptOverlib.setAttribute("language", "Javascript");
+        scriptOverlib.setAttribute("type","text/javascript");
+        scriptOverlib.setAttribute("src",overlibFileLocation);
+        scriptOverlib.appendChild(dom.createTextNode(""));
+        head.appendChild(scriptOverlib);        
+     
+    }//addResources
+    
+    /**
+     *Adds the necessary div element for the overlib library.
+     **/
+    public void addOverlibBox(){
+        org.w3c.dom.Element html = this.dom.getDocumentElement();
+        NodeList bodyList = html.getElementsByTagName("body");
+        org.w3c.dom.Node body = bodyList.item(0);
+        
+        //Create the overlibDiv for Overlib library
+        Element overlibDiv = dom.createElement("div");
+        overlibDiv.setAttribute("id","overDiv");
+        overlibDiv.setAttribute("style","position:absolute; visibility:hidden; z-index:1000;");
+        overlibDiv.appendChild(dom.createTextNode(""));
+        
+        //Get the first child of the body element
+        org.w3c.dom.Node firstChild = body.getFirstChild();
+        
+        //If we managed to get the first child then try to add this as the first cild, otherwise add it to the bottom
+        if(firstChild!=null){
+            body.insertBefore(overlibDiv,firstChild);
+        }//if
+        else{
+            body.appendChild(overlibDiv);
+        }//else
+    }
+        
+    /**
+     *Checks if the given tag name is a STOP_WORDS.
+     *<p>
+     *If it is a stop word, then the children of this node will not be modified. Stop words include head, script, etc.
+     *@param tag This is the tag name.
+     */
+    public boolean isStopTag(String tag) {
+        if(STOP_WORDS == null){
+            return false;
+        }//if 
+        else{
+            return STOP_WORDS.contains(tag.trim());
+        }//else
+    }//isStopTag
+    
+     /**
+     *This method will be used to create a pattern or a list of Patterns based on the given ontology
+     *@param os_uri the ontology URI
+     *@return a pattern HashSet that can be used to identify occurances of terms from the ontology
+     */
+    public HashSet createPattern(String os_uri){
+        //get all the terms
+        String[] terms = os_Service.getAllTerms(os_uri);
+        
+        //If we can't get terms for the given ontology (either terms is null or the length is less than 1)
+        if(terms == null || terms.length < 1){
+            System.err.println("createPattern : Couldn't get the terms for the given ontology: "+os_uri);
+            return null;
+        }//if
+        else{
+            /* Sort and then add backwards. This should ensure that
+             * longer terms are added first. */
+            TreeSet sortedTerms = new TreeSet();
+            for(int i=0; terms != null && i < terms.length; i++) {
+                sortedTerms.add(terms[i]);
+            }//for
+            
+            /*
+             *We will create a set of patterns by using the concepts from the given ontology
+             *Depending on the size of the ontology, we might create more than one pattern
+             *We will use an upper-limit for the number of concepts that can be included into a pattern 
+             *This is mainly because of having problems with compiling long and patterns 
+             */
+            HashSet localPatternSet= new HashSet();
+            String tempPattern = "";            
+            Vector stringVector = new Vector();
+            
+            /*
+             *Depending on the upper_limit here we will try to create more than one pattern
+             *These hopefully will be easier to compile rather than having a single large pattern created from the entire ontology
+             */
+            int counter = 0;
+            for(Iterator it = sortedTerms.iterator();it.hasNext();) {       
+                if(counter<UPPER_LIMIT){
+                    tempPattern = ((String) it.next()) + "|" + tempPattern;
+                    counter = counter+1;                   
+                }//if
+                else{
+                    String temp = tempPattern.substring(0, tempPattern.length() - 1);  //remove the trailling line
+                    //restart the counter and the tempPattern so that we will have new clean pattern
+                    counter = 0;
+                    tempPattern = "";
+                    //Add the created pattern to our vector of patterns
+                    stringVector.add(temp);
+                }//else
+            }//for
+            
+            //Make sure that the tempPattern has some elements before we try to add it to our vector
+            if(tempPattern.length()>1){
+                tempPattern = tempPattern.substring(0, tempPattern.length() - 1);  //remove the trailing line
+                stringVector.add(tempPattern);
+            }
+            
+            System.out.println("Number of Patterns created: "+stringVector.size());
+            for (int i = 0; i < stringVector.size(); i++) {
+                tempPattern = (String) stringVector.elementAt(i);
+
+                //set up the regex pattern matcher
+                Pattern change = Pattern.compile("(\\+|\\*)",Pattern.CASE_INSENSITIVE);
+                Matcher m = change.matcher(tempPattern);
+                String newpattern = m.replaceAll("\\$1");
+                newpattern = newpattern.replace('(', '.');   //this is the easiest
+                newpattern = newpattern.replace(')', '.');   //way of doing it
+                newpattern = newpattern.replace(']', '.');   //
+                newpattern = newpattern.replace('[', '.');   //
+                newpattern = newpattern.replace('?', '.');   //
+                /* Replace any white space in the pattern with the white
+                * space regular expression. Should improve handling of
+                * line breaks. SKB. */
+                newpattern = newpattern.replaceAll("\\s", "\\\\s");
+                System.out.println("About to compile Pattern-"+(i+1));
+                Pattern pattern2 = Pattern.compile( "\\b(" + newpattern + ")\\b",Pattern.CASE_INSENSITIVE);  //look for terms, \b = word boundary
+                System.out.println("Successfully compiled Pattern-"+(i+1));
+                localPatternSet.add(pattern2);
+            }
+            return localPatternSet;
+        }//else        
+    }
+    
+    /**
+     *Given a Resource bundle and properties label, it will return the properties value
+     *@param properties This is the main ResourceBundle object
+     *@param propertyLabel Label of the property in the properties file
+     *@return The property value
+     **/
+    public String getProperty(ResourceBundle properties, String propertyLabel){
+        String property = null;
+        try {
+            property = properties.getString(propertyLabel);
+        } catch (NullPointerException  ex) {
+            System.err.println(ex.getMessage());
+            return null;
+        } catch (MissingResourceException ex){
+            System.err.println(ex.getMessage());
+            return null;
+        } catch (ClassCastException ex){
+            System.err.println(ex.getMessage());
+            return null;
+        }
+        return property;
+    }//getProperty            
+}
+
+/*
+ * ChangeLog
+ *
+ * 
+ */
+

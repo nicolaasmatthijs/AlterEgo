@@ -1,0 +1,3 @@
+In attachment you can find the Wikipedia usage statistics I've extracted from the data. I've included a summary that contains the number of Wikipedia pages visited, the number of Wikipedia pages visited that link to a disambiguation page and the number of disambiguation pages visited. I've also included a more detailed list of which Wikipedia pages have been visited by which user.
+
+Looking at the numbers, it seems that it would be possible to use the Wikipedia disambiguation strategy to do some early evaluation for some of the users. However, as the numbers are quite low, I think we'll have to try evaluation similar to that presented in the Teevan paper at some point.

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Document   : portlet.xml
+    Author     : Yeliz
+    Description:
+        Purpose of the document follows.
+    $Id: portlet.xml,v 1.4 2006/07/15 11:02:08 yesiladay Exp $
+-->
+<portlet-app>
+<portlet>
+    <portlet-name>100</portlet-name>
+    <display-name>CohsePortlet</display-name>
+    <portlet-class>uk.ac.man.cs.img.cohse.portlet.CohsePortlet</portlet-class>
+    <expiration-cache>0</expiration-cache>
+    <supports>
+        <mime-type>text/html</mime-type>
+        <portlet-mode>view</portlet-mode>
+        <portlet-mode>edit</portlet-mode>
+        <portlet-mode>help</portlet-mode>
+    </supports>
+       <portlet-info>
+        <title>Cohse Portlet</title>
+        <short-title>Cohse Portlet</short-title>
+        <keywords>Cohse Portlet</keywords>
+    </portlet-info>
+    <security-role-ref>
+        <role-name>power-user</role-name>
+    </security-role-ref>
+    <security-role-ref>
+        <role-name>User</role-name>
+    </security-role-ref>
+    <portlet-preferences>  
+        <preferences-validator>uk.ac.man.cs.img.cohse.portlet.CohsePreferencesValidator</preferences-validator>
+    </portlet-preferences>
+</portlet>
+</portlet-app>

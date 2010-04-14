@@ -1,0 +1,468 @@
+/*
+ * LinkUtil.java
+ * Used to manage link creation, manipulation, etc.
+ * Created on August 15, 2005, 3:34 PM
+ * @author Yeliz Yesilada
+ */
+
+package uk.ac.man.cs.img.cohse.utils;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Document;
+
+import java.util.Hashtable;
+import java.util.HashSet;
+import java.util.Locale;
+
+import java.net.URLDecoder;
+
+import java.lang.IndexOutOfBoundsException;
+import java.io.UnsupportedEncodingException;
+
+/**
+ * @author Yeliz Yesilada
+ */
+public class LinkUtil {
+      
+    //This will be the counter of unique concepts
+    private int conceptCount = 0;
+    
+    public void setConceptCount(int count){
+        this.conceptCount = count;
+    }
+    
+    //This will be used to cache concepts that corresponding div elements will be created and unique ids will be stored
+    private Hashtable conceptCache;
+    
+    public void setConceptCache(Hashtable cache){
+        this.conceptCache = cache;
+    }
+    
+    //This will be used to store retrieved resources for a concept
+    private Hashtable resourcesCache;
+    
+    //This will be used to store retrieved supers for a concept
+    private Hashtable supersCache;
+    
+    //This will be used to store retrieved subs for a concept
+    private Hashtable subsCache;
+    
+    //This will be used to cache retrieved labels
+    private Hashtable labelCache;
+       
+    //This is the main template that will hold all the link boxes
+    private Element linkBoxGroup = null;
+    
+    public void setLinkBoxGroup(Element box){
+        this.linkBoxGroup = box;
+    }
+    
+    //OntologyService utilility class that will be instantiated in the constractor
+    private OSUtil osUtil = null;
+    //AnnotationService utility class that will be instantiated in the constructor
+    private ASUtil asUtil = null;
+    //Ontology (its url) that will be instantiated in the constructor
+    private String ontology =null;
+    //Annotation Service components
+    private String[] components = null;
+    
+    /** Creates a new instance of LinkUtil 
+     *@param doc A Document object
+     *@param osUtil as OsUtil object
+     *@param ont the URI of the ontology
+     *@param asUtil an asUtil object
+     */
+    public LinkUtil(org.w3c.dom.Document doc, OSUtil osUtil, String ont, ASUtil asUtil, String[] components) {
+        //Instantiate all caches
+        this.conceptCache = new Hashtable();
+        this.resourcesCache = new Hashtable();
+        this.supersCache = new Hashtable();
+        this.subsCache = new Hashtable();
+        this.labelCache = new Hashtable();
+        
+        //reset concept count
+        conceptCount = 0;
+        
+        this.asUtil = asUtil;
+        this.osUtil = osUtil;
+        this.ontology = ont;
+        this.components = components;
+                
+        if(linkBoxGroup == null){            
+            this.linkBoxGroup = doc.createElement("div");
+        }//if
+    }//LinkUtil
+    
+    /**
+     *This method will return an id that will be the unique identifier of the link box
+     *@param doc A Document object
+     *@param concept the URL of the concept that the linkbox or id is requested for
+     *@return int value is returned that is the unique identifier of the div box of the given concept
+     */
+    public int getLinkBoxId (Document doc, String concept, String pageURL){
+        int uniqueId;
+        //We will cache concepts that have already been requested so that we can provide access to the already created div elements
+        Integer id = (Integer) conceptCache.get(concept.toLowerCase());
+        if(id == null) {   //create a new instance                                                                                                                    
+            conceptCount++;
+            uniqueId = conceptCount;
+	    //I am not sure about this lowercase stuff....
+            conceptCache.put(concept.toLowerCase(), new Integer(conceptCount));
+            createLinkBox(doc,concept.toLowerCase(), pageURL);
+	    //System.out.println("----------creating box for: "+concept+" </br>");
+        }
+        else{
+            uniqueId = id.intValue();
+        }        
+        return uniqueId;
+    }//getLinkBoxId
+
+    /**
+     *This method creates the necessary link box for the given term name. First it resolves the term to identify the right concept and then creates the box. 
+     *Finally  it adds this new created box to the collection of link boxes. 
+     *@param doc a document object
+     *@param term term that is identified in the given text node
+     *@return void
+     **/
+    public void createLinkBox(Document doc, String term, String pageURL){
+        //Create a new div box
+        Element divElement = doc.createElement("div");
+	divElement.setAttribute("style","visibility:hidden");
+        divElement.setAttribute("id","div"+conceptCount);
+        //Create img element
+        Element imgElement = doc.createElement("img");
+	imgElement.setAttribute("onclick","removeLinkbox('div"+conceptCount+"'); return false");
+        imgElement.setAttribute("src","http://cohse.man.ac.uk/resources/close.gif");
+        imgElement.setAttribute("align","right");
+	imgElement.setAttribute("border","0");
+        divElement.appendChild(imgElement);
+
+	//get the concept url, since we identified the term, we need to get the concept URL
+	String[] concepts = osUtil.resolveTerm(ontology, term);
+	//Check if we manaage to resolve the term, if we cannot then create the box accordingly.
+	if(concepts == null || concepts.length < 1) {	    
+	    //Use the term as the title
+	    Element title = doc.createElement("div");
+	    title.setAttribute("style","background-color: navy; font-size: large;color:white;padding:0px;margin:0px;padding-left:4px;text-transform:capitalize");
+	    title.appendChild(doc.createTextNode(term));
+	    divElement.appendChild(title);
+	    //Try to say that there is no description for this term
+	    Element desc = doc.createElement("p");
+	    desc.setAttribute("style","text-align:justify;margin-left:6px;margin-right:6px");
+	    desc.appendChild(doc.createTextNode("[No Description]"));
+	    divElement.appendChild(desc);
+	}//if
+	else{	    
+	    for(int i=0; i< concepts.length; i++) {			       
+		//add title
+		divElement.appendChild(getTitle(doc, concepts[i]));
+		//add description
+		divElement.appendChild(getDescription(doc, concepts[i]));
+		//add Resources list
+                Element resources = getResources(doc,concepts[i],pageURL);
+                if(resources !=null) {
+		    divElement.appendChild(resources);
+                }
+                Element broaderResources = getBroaderResources(doc,concepts[i],pageURL);
+                if(broaderResources != null){
+		    //Add a line before broader Resources list
+		    Element hr = doc.createElement("hr");
+		    hr.setAttribute("style","height:2px;");
+		    divElement.appendChild(hr);
+		    divElement.appendChild(broaderResources);
+		}//if broaderResources
+                
+                Element specificResources = getSpecificResources(doc,concepts[i],pageURL);
+                if(specificResources !=null){
+		    //Add a line before broader Resources list
+		    Element hr = doc.createElement("hr");
+		    hr.setAttribute("style","height:2px;");
+		    divElement.appendChild(hr);
+		    divElement.appendChild(specificResources);
+		}//if specificResources
+	    }
+	}//else
+	//Add this new div box to our collection of div boxes
+	linkBoxGroup.appendChild(divElement);
+    }//createLinkBox
+
+    /**
+     *This method will return the title node
+     *@param doc a document object
+     *@param concept this is the concept URI
+     *@return an element that represents the title of the concept
+     **/
+    public Element getTitle(Document doc, String concept){
+	//create title element
+	Element title = doc.createElement("div");
+	title.setAttribute("style","background-color: navy; font-size: large;color:white;padding:0px;margin:0px;padding-left:4px;text-transform:capitalize");
+        String label = getLabel(concept);
+        title.appendChild(doc.createTextNode(label));
+	return title;
+    }//getTitle
+
+    /**
+     *This method will return the description node
+     *@param doc a document object
+     *@param concept this is the concept URI
+     *@return an element that represents the description of this concept
+     **/
+    public Element getDescription(Document doc, String concept){
+	//add Description
+	Element desc = doc.createElement("p");
+	desc.setAttribute("style","text-align:justify;margin-left:6px;margin-right:6px");
+	//System.out.println("LinkUtil getDescription: "+ontology+" concep:"+concept);
+	String descTxt = osUtil.getDesc(ontology, concept);
+	if(descTxt!=null){
+	    desc.appendChild(doc.createTextNode(descTxt));
+	}//if
+	else{
+	    desc.appendChild(doc.createTextNode("[No description]"));
+	}//else
+	return desc;
+    }//getDescription
+
+    /**
+     *This method will return all the resources related to this concept
+     *@param doc This will be throws document that will be used to create new elements
+     *@param concept This will be the url of the concept that will be used to get resources for
+     *@return Element This will return an element that will be a div element that holds all the reources
+     */
+    public Element getResources (Document doc, String concept, String pageURL){
+      COHSEAnnotation[] annos = this.getAnnotations(concept);
+      if(annos==null || annos.length==0){
+          return null;
+      }
+      else{
+          Element ul = makeList(doc, annos,"list-style-type:none;",pageURL);
+          if(ul!=null){
+              Element resources = doc.createElement("div");
+              resources.appendChild(ul);
+              return resources;
+          }
+          else{
+              return null;
+          }
+      }//else
+    }//getResources
+
+   /**
+     *This method will return all the resources related to the supers of this concept
+     *@param doc This will be the document that will be used to create new elements
+     *@param concept This will be the concept that broader resources will be requested
+     *@return An element will be returned that holds the div element and all the broader resources
+     */
+    public Element getBroaderResources (Document doc, String concept, String pageURL){
+      COHSEAnnotation[] annos = null;
+      
+      //System.out.println("Get Broader resources: "+concept);
+      Element resources = doc.createElement("div");
+      Element title = doc.createElement("h1");
+      title.setAttribute("style", "margin-left:6px;margin-right:6px;font-size: medium;font-weight:bold;color:navy");
+      title.appendChild(doc.createTextNode("Broader Resources"));
+      resources.appendChild(title);
+      
+      //This will be used to check if managed to get resources for any of the parent concepts
+      boolean check = false;
+      
+      //First check cache if we know the supers of this concept
+      String[] superConcepts = (String[]) supersCache.get(getResourcesCacheKey(concept));
+      //if it is not in the cache then contact annotation service to get supers and add them to the cache
+      if(superConcepts==null){	  
+        superConcepts = osUtil.getSuperConcepts(ontology,concept);
+        if (superConcepts == null) {
+            superConcepts = new String[0];
+        }
+        supersCache.put(getResourcesCacheKey(concept),superConcepts);
+      }//if
+      
+      Element ulMain = doc.createElement("ul");
+      ulMain.setAttribute("style","list-style-type:none;text-transform:capitalize");
+      if(superConcepts!=null && superConcepts.length>0){
+        for(int i=0; i < superConcepts.length; i++) {
+            annos = this.getAnnotations(superConcepts[i]);
+            if(annos!=null && annos.length>0){                
+                //Get the list of resources
+                Element ul = makeList(doc, annos,"list-style-type:disc",pageURL);
+                if(ul!=null){
+                    Element li = doc.createElement("li");
+                    li.appendChild(doc.createTextNode(this.getLabel(superConcepts[i])));
+                    check = true;
+                    //Add all resources list
+                    li.appendChild(ul);
+                    //Add this list to our main list
+                    ulMain.appendChild(li);
+                }//if                
+            }//if                
+        }//for
+      }//if
+      resources.appendChild(ulMain);
+      if(check)
+          return resources;
+      else
+          return null;
+    }//getBroaderResources
+
+   /**
+     *This method will return all the reources related to subs of the given concept
+     *@param doc A Document object
+     *@param concept the URL of a concept
+     *@return An element will be returned that holds the div element and all the specific resources
+     */
+    public Element getSpecificResources (Document doc, String concept, String pageURL){
+      COHSEAnnotation[] annos = null;
+      
+      Element resources = doc.createElement("div");
+      Element title = doc.createElement("h1");
+      title.setAttribute("style","margin-left:6px;margin-right:6px;font-size: medium;font-weight:bold; color: navy");
+      title.appendChild(doc.createTextNode("More Specific Resources"));
+      resources.appendChild(title);
+      
+      //This will be used to check if we get some resources for any of the children of the given concept
+      boolean check = false;
+      
+      //First check cache if we know the subs of this concept
+      String[] subConcepts = (String[]) subsCache.get(getResourcesCacheKey(concept));
+      //if it is not in the cache then contact annotation service to get subs and add them to the cache
+      if(subConcepts==null){
+        subConcepts = osUtil.getSubConcepts(ontology,concept);
+        if (subConcepts == null) {
+            subConcepts = new String[0];
+        }
+        subsCache.put(getResourcesCacheKey(concept),subConcepts);
+      }//if
+      
+      Element ulMain = doc.createElement("ul");
+      ulMain.setAttribute("style","list-style-type:none;text-transform:capitalize");
+
+      if(subConcepts!=null && subConcepts.length>0){
+        for(int i=0; i < subConcepts.length; i++) {
+            annos = this.getAnnotations(subConcepts[i]);
+            if(annos!=null && annos.length>0){                
+                //Get the list of resources
+                Element ul = makeList(doc, annos,"list-style-type:disc",pageURL);
+                if(ul!=null){
+                    check = true;
+                    Element li = doc.createElement("li");
+                    li.appendChild(doc.createTextNode(this.getLabel(subConcepts[i])));
+                    //Add all resources list
+                    li.appendChild(ul);
+                    //Add this list to our main list
+                    ulMain.appendChild(li);
+                }//if                
+            }//if               
+        }//for
+      }//if
+      resources.appendChild(ulMain);
+      if(check)
+          return resources;
+      else
+          return null;
+    }//getSpecificResources
+
+
+   /**
+    *This method will create a ul element that lists all the reources
+    *@param doc The document that will be used to create an element
+    *@param annos A array of annotations that will be used to populate the list
+    *@return An element will be returned that is a UL element and includes all the resources
+    */    
+   public Element makeList (Document doc, COHSEAnnotation[] annos, String style, String pageURL) {
+        Element ul = null;
+        
+        HashSet duplicateResources = new HashSet();
+        /*
+         *This is used to ignore resources that point back to the current page.
+         *This Hashset is used to identify unique resources and by adding the current page's URL,
+         *we ensure that the resources identified from the current page, will not be added to the list.
+         */
+        duplicateResources.add(pageURL);
+        for(int i=0; i < annos.length; i++) {
+            if(!duplicateResources.contains((String) annos[i].getURL())){
+                //if it is the first time we are adding an item then initialise the UL element
+                if(ul==null){
+                    ul = doc.createElement("ul");
+                    Element ulStyle = doc.createElement("xsl:attribute");
+                    ul.setAttribute("style",style);
+                }
+                Element li = doc.createElement("li");
+                Element a = doc.createElement("a");
+                a.setAttribute("href",annos[i].getURL());
+                a.appendChild(doc.createTextNode(annos[i].getDescription()));
+                li.appendChild(a);
+                ul.appendChild(li);                
+                duplicateResources.add(annos[i].getURL());
+            }//if
+        }
+        return ul;
+   }//makeList
+
+    /**
+    *This method will be used to get the label of a concept.
+    *@param concept the concept that will be used to get the label for
+    *@return the label of the given concept
+    */
+    public String getLabel (String concept){
+	//First check cache if we know the label of this concept
+	String label = (String) labelCache.get(getResourcesCacheKey(concept));
+	//if it is not in the cache then contact annotation service to get the label
+	if(label==null){   
+	    //Contact as to get the label
+	    label = osUtil.getConceptRender(ontology, concept);
+	    //if we get a label put it in the cache
+	    if(label!=null){
+		labelCache.put(getResourcesCacheKey(concept), label);
+	    }//if
+	    //if it is null, try to get the label from the concept URL
+	    else{
+		try{
+		    String decodedConcept = URLDecoder.decode(concept,"UTF-8");
+		    int index = decodedConcept.lastIndexOf("#");
+		    label = decodedConcept.substring(index+1);
+		    labelCache.put(ontology+"-"+concept, label);
+		} catch (IndexOutOfBoundsException e){
+		    label="";
+		    labelCache.put(ontology+"-"+concept, label);
+		} catch (UnsupportedEncodingException e){
+		    label="";
+		    labelCache.put(ontology+"-"+concept, label); 
+		}//catch              
+	    }//else
+	}//if
+	return label;
+    }//getLabel
+    
+    /**
+     *This is a service method that will be used to getAnnotations, mainly used to check cache and if can't find annotations then it will contact to the service
+     *@param concept This is the concept URL that will be used to get the annotations
+     *@return it will return an array of COHSEAnnotations
+     */
+    public COHSEAnnotation[] getAnnotations(String concept){       
+	//First check cache  
+	COHSEAnnotation[] annos = (COHSEAnnotation[]) resourcesCache.get(getResourcesCacheKey(concept));
+	//if it is not in the cache then getAnnotations and add them to the cache
+	if(annos==null){
+	    annos = asUtil.getAnnotations(concept,ontology,this.components);
+            if (annos == null) {
+                annos = new COHSEAnnotation[0];
+            }
+	    resourcesCache.put(getResourcesCacheKey(concept), annos);
+	}//if      
+	return annos;
+    }//getAnnotations
+    
+    
+    private String getResourcesCacheKey(String concept) {
+        return ontology+"-"+concept;
+    }
+
+    /**
+     *This method returns the list of div elemenst that have been created as the child nodes of linkBoxGroup.
+     *@return returns the list of linkboxes as children of div element.
+     **/
+    public Element getLinkBoxes(){
+	return linkBoxGroup;
+    }
+ }

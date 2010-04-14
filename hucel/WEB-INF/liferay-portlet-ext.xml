@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+    Document   : liferay-portlet-ext.xml
+    Created on : May 17, 2006, 2:24 PM
+    Author     : bh37721
+    
+    English: Copyright © 2007 Sun Microsystems, Inc.  All rights reserved. 
+U.S. Government Rights - Commercial software.  Government users are
+subject to the Sun Microsystems, Inc. standard license agreement and
+applicable provisions of the FAR and its supplements.  Use is subject to
+license terms.  Sun,  Sun Microsystems,  the Sun logo and  Java are
+trademarks or registered trademarks of Sun Microsystems, Inc. in the
+U.S. and other countries.
+
+French: Copyright © 2007 Sun Microsystems, Inc. Tous droits
+rÈservÈs.L'utilisation est soumise aux termes du contrat de licence.Sun,
+ Sun Microsystems,  le logo Sun et  Java sont des marques de fabrique ou
+des marques dÈposÈes de Sun Microsystems, Inc. aux Etats-Unis et dans
+d'autres pays.
+
+    $Id: liferay-portlet-ext.xml,v 1.2 2007/05/30 18:22:58 horanb Exp $
+-->
+
+<!DOCTYPE liferay-portlet-app PUBLIC "-//Liferay//DTD Portlet Application 4.0.0//EN" "http://www.liferay.com/dtd/liferay-portlet-app_4_0_0.dtd">
+
+<liferay-portlet-app>
+	<portlet>
+		<portlet-name>100</portlet-name>
+		<!--<struts-path>hello_world</struts-path>-->
+		<!--<include>false</include>-->
+	</portlet>
+</liferay-portlet-app>

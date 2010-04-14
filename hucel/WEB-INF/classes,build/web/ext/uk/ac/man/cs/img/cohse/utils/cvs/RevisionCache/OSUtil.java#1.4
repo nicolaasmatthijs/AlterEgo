@@ -1,0 +1,364 @@
+/*
+ * OSUtil.java
+ * Created on August 14, 2005, 7:08 PM
+ * @author Yeliz Yesilada
+ */
+package uk.ac.man.cs.img.cohse.utils;
+
+import java.util.Vector;
+import java.util.Hashtable;
+
+import java.net.URL;
+import java.net.URLEncoder;
+import java.net.URLDecoder;
+
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+
+import java.io.UnsupportedEncodingException;
+import javax.xml.parsers.FactoryConfigurationError;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
+import java.io.IOException;
+
+/**
+ * Used to manage Ontology Service
+ * @author Yeliz Yesilada
+ */
+public class OSUtil {
+    
+    private String ontologyService = null;
+    private String currentOntology = null;
+    private String[] currentTerms = null;
+    
+    private Hashtable cache;
+    
+    /** Creates a new instance of OSUtil */
+    public OSUtil(String url, boolean cacheOn) {
+        this.ontologyService = url;
+        if(cacheOn){
+            cache = new Hashtable();
+        }//if
+    }
+    
+    /**
+     *Returns a string array of all the terms in the given ontology
+     *@param ontology Is the url of the ontology
+     *@return A string array will be retunred that holds all the terms in the given ontology
+     */
+    public String[] getAllTerms(String ontology) {
+        //was this ontology the subject of the previous query (can we reuse?)
+        if(currentOntology != null && currentOntology.equals(ontology)) {
+            return currentTerms;
+        }
+        
+        currentOntology = ontology;
+        try {
+            Vector terms = new Vector();
+            ontology = URLEncoder.encode(ontology, "UTF-8");
+            
+            Document dom = getDOMResult("service=allterms&ontology=" + ontology);
+            //System.out.println("I will try tp get the terms for the ontology: service=allterms&ontology="+ ontology);
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("TERM");
+                for(int i=0; ts != null && i < ts.getLength(); i++) {
+                    //Make sure that we got back a node before we try to get the value of that node
+                    if(ts.item(i).getFirstChild()!=null){
+                        terms.add(ts.item(i).getFirstChild().getNodeValue());
+                    }
+                    //System.out.println("Terms :"+i);
+                }//for
+                currentTerms = new String[0];
+                currentTerms = (String[]) terms.toArray(currentTerms);
+                return currentTerms;
+            }//if
+            
+            return null;
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("UnsupportedEncodingException: Cannot encode the given URL ontology.");
+            return null;
+        } catch (FactoryConfigurationError  e) {
+            System.err.println("FactoryConfigurationError: Could not create factory for parsing the document. ");
+            return null;
+        } catch (Exception e){
+            System.err.println("OsUtil Exception - getAllTemrs : an error occured: " + e);
+            return null;
+        }//catch
+    }//getAllTerms
+    
+    /**
+     *This will look for a concept corresponding to the given string.
+     *@param term This is the term that will be search
+     *@param ontology The term will be looked up in this ontology
+     *@return  This returns an array of concepts
+     */
+    public String[] resolveTerm(String ontology, String term) {
+        try {
+            term = URLEncoder.encode(term, "UTF-8");
+            ontology = URLEncoder.encode(ontology, "UTF-8");
+            
+            String[] concepts = null;
+            Document dom = getDOMResult("service=lookup&ontology=" + ontology + "&arg=" + term);
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("CONCEPT");
+                if(ts.getLength() >0) {
+                    concepts = new String[ts.getLength()];
+                    for(int i=0; i < ts.getLength(); i++) {
+                        //Make sure that the first child is not null before, we try to get the node value
+                        if(ts.item(i).getFirstChild()!=null){
+                            concepts[i] = ts.item(i).getFirstChild().getNodeValue();
+                        }
+                    }//for
+                }//if
+            }//if
+            return concepts;
+        } catch (UnsupportedEncodingException e) {
+            System.err.println("UnsupportedEncodingException: cannot encode the given term and the ontology URL");
+            return null;
+        } catch (Exception e){
+            System.err.println("OsUtil Exception - resolveTerm: an error occured: " + e);
+            return null;
+        }//catch
+    }
+    
+    /**
+     *This will return the label of a given concept with respect to the given ontology.
+     *@param concept Concept that will be used to lookup for its label.
+     *@param ontology This ontology will be used to lookup for its label.
+     *@return String that will be the label of the concept.
+     */
+    public String getConceptRender(String ontology, String concept) {    
+        try {            
+            concept = URLEncoder.encode(concept, "UTF-8");
+            
+            Document dom = getDOMResult("service=render&ontology=" + ontology + "&arg=" + concept);
+            String render = null;
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("TERM");
+                if(ts.getLength() >0) {
+                    //Make sure that the first child is not null before we try to get the first child.
+                    if(ts.item(0).getFirstChild()!=null){
+                        render = ts.item(0).getFirstChild().getNodeValue();                        
+                        //System.out.println("Render value: "+render);
+                    }
+                }//if
+            }//if
+            return render;
+        } catch(UnsupportedEncodingException e) {
+            System.err.println("UnSupportedEncodingException: Cannot encode the given concept and the ontology URL!");
+            return null;
+        } catch (Exception e){
+            System.err.println("OSUtil Exception - getConecpt Render: an error occured: " + e);
+            return null;
+        }//catch  
+    }
+    
+    /**
+     *This will return the documentation of a given concept with respect to the given ontology.
+     *@param concept Concept that its description will be returned.
+     *@param ontology Ontology that will be used to return the description of a given concept.
+     *@return A string will be returned that holds the description of a given concept.
+     */
+    public String getDesc (String ontology, String concept){
+        try {
+            concept = URLEncoder.encode(concept, "UTF-8");
+            
+            Document dom = getDOMResult("service=documentation&arg=" + concept + "&ontology=" + ontology);
+            String desc = "";
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("DOCUMENTATION");
+                for(int i=0; ts != null && i < ts.getLength(); i++) {
+                    //Make sure that the first child is not null
+                    if(ts.item(i).getFirstChild()!=null){
+                        desc += ts.item(i).getFirstChild().getNodeValue();
+                    }
+                }//for
+            }//if
+            if(desc.equals(""))
+                return null;
+            else
+                return desc;
+        } catch(UnsupportedEncodingException e) {
+            System.err.println("UnSupportedEncodingException: Cannot encode the given concept and the ontology URL!");
+            return null;
+        } catch (Exception e){
+            System.err.println("OSUtil Exception - getDesc: an error occured: " + e);
+            return null;
+        }//catch
+    }
+    
+    /**
+     *This will return the supers of a given concept with respect to the given ontology.
+     *@param concept The concept that will be used to retrieve its supers.
+     *@param ontology The ontology that will be used to access the supers.
+     *@return An array of strings that will hold the supers of the given cocnept.
+     */
+    public String[] getSuperConcepts(String ontology, String concept){
+      try {
+          concept = URLEncoder.encode(concept, "UTF-8");
+          //ontology = URLEncoder.encode(ontology, "UTF-8");
+          
+          Document dom = getDOMResult("service=supers&ontology=" + ontology + "&arg=" + concept);
+          String[] supers = null;
+          if(dom != null) {
+              NodeList ts = dom.getElementsByTagName("CONCEPT");
+              if(ts != null && ts.getLength() > 0) {
+                  supers = new String[ts.getLength()];
+                  for(int i=0; ts != null && i < ts.getLength(); i++) {
+                      //Make sure that the first child is not null before we start to get the value
+                      if(ts.item(i).getFirstChild()!=null){
+                          supers[i] = ts.item(i).getFirstChild().getNodeValue();
+                      }
+                  }//for
+              }//if
+          }//if
+          return supers;          
+      } catch(UnsupportedEncodingException e) {
+          System.err.println("UnSupportedEncodingException: Cannot encode the given concept and the ontology URL!");
+          return null;
+      } catch (Exception e){
+          System.err.println("OSUtil Exception - getSuperConcepts: an error occured: " + e);
+          return null;
+      }//catch
+    }
+    
+    /**
+     *This will return the subs of a given concept with respect to the given ontology.
+     *@param concept The concept that will be used to retrieve its subs.
+     *@param ontology The ontology that will be used to access the subs.
+     *@return An array of strings that will hold the supers of the given concept.
+     */    
+    public String[] getSubConcepts(String ontology, String concept){
+        try {
+            concept = URLEncoder.encode(concept, "UTF-8");
+            //ontology = URLEncoder.encode(ontology, "UTF-8");
+            
+            Document dom = getDOMResult("service=subs&ontology=" + ontology + "&arg=" + concept);
+            String[] subs = null;
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("CONCEPT");
+                if(ts != null && ts.getLength() > 0) {
+                    subs = new String[ts.getLength()];
+                    for(int i=0; ts != null && i < ts.getLength(); i++) {
+                        //Make sure that the first value is not null before we start to get it's value
+                        if(ts.item(i).getFirstChild()!=null){
+                            subs[i] = ts.item(i).getFirstChild().getNodeValue();
+                        }
+                    }//for
+                }//if
+            }//if
+            return subs;
+        } catch(UnsupportedEncodingException e) {
+            System.err.println("UnSupportedEncodingException: Cannot encode the given concept and the ontology URL!");
+            return null;
+        } catch (Exception e){
+            System.err.println("OSUtil Exception - getSubConcepts: an error occured: " + e);
+            return null;
+        }//catch
+    }//getSubTerms
+      
+    /**
+     *This will return all ontolgies that this service knows about.
+     *@return This returns a string array which holds all the ontologies.
+     */
+    public String[] getAllOntologies() {
+        try{
+            Document dom = getDOMResult("service=ontologies");
+            String[] onts = null;
+            if(dom != null) {
+                NodeList ts = dom.getElementsByTagName("ONTOLOGY");
+                if(ts != null && ts.getLength() > 0) {
+                    onts = new String[ts.getLength()];
+                    for(int i=0; ts != null && i < ts.getLength(); i++) {                        
+                        //Make sure that the first value is not null before we start to get it's value
+                        if(ts.item(i).getFirstChild()!=null){
+                            onts[i] = ts.item(i).getFirstChild().getNodeValue();
+                        }
+                    }//for
+                }//if
+                //That means we can contact the ontology service but there is no ontology loaded to this service
+                else{
+                    onts = new String[0];
+                }
+            }//if
+            return onts;
+        } catch (Exception e){
+            System.err.println("OSUtil Exception - getAllOntologies: an error occured: " + e);
+            return null;
+        }//catch
+    }
+   
+     
+    /**
+     *This will load the given ontology
+     *@return This returns true in case of successfull loading of the ontology, and false in case of a failure.
+     */
+    public boolean loadOntology(String ontologyURI) {
+        try{
+            Document dom = getDOMResult("service=load&ontology="+ontologyURI);
+            if(dom != null) {
+                /**
+                 *In case of a success, this will return an example file as follows:
+                 *<result>
+                 * <loaded></loaded>
+                 *</result>
+                 */ 
+                Node loaded = dom.getFirstChild().getFirstChild();
+                if(loaded != null) {                     
+                    return true;
+                }//if
+                //That means we can contact the ontology service but there is no ontology loaded to this service
+                else{
+                    return false;
+                }//else
+            }//if
+            //If there is something wrong with the returned document.
+            else{                
+                return false;
+            }//else
+        } catch (Exception e){
+            System.err.println("OSUtil Exception - loadOntology: an error occured: " + e);
+            return false;
+        }//catch
+    }
+    
+    /**
+     *This will be used to parse the returned XML document from the ontology service
+     *@param arg Is the arguments that will be used with the ontology service url to retrieve the results
+     *@return  It will return a Document object that can be processed.
+     */
+    private Document getDOMResult(String arg) {
+        if(cache != null && cache.containsKey(arg)) {
+            return (Document) cache.get(arg);
+        }//if
+        try {
+            DocumentBuilderFactory docfac = DocumentBuilderFactory.newInstance();
+            DocumentBuilder doc = docfac.newDocumentBuilder();
+            Document result = doc.parse(ontologyService + "?" + arg);
+            if(cache != null) {
+                cache.put(arg, result);
+            }//if
+            return result;
+        } catch(FactoryConfigurationError e) {
+            System.err.println("FactoryConfigurationError: Cannot instantiate the DocumentBuilderFactory");
+            return null;
+        }//catch
+        catch(ParserConfigurationException e){
+            System.err.println("ParserConfigurationException: Cannot create a new Document Builder");
+            return null;
+        }//catch
+        catch(SAXException e){
+            System.err.println("SAXException: Cannot parse the given argument");
+            return null;
+        }//catch
+        catch(IOException e){
+            System.err.println("IOException: Cannot access the given arg and parse the document");
+            return null;
+        }//catch
+    }
+}//class OSUtil
