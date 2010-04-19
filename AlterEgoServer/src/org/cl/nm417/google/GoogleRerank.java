@@ -41,7 +41,7 @@ public class GoogleRerank {
 			}
 			
 			if (lookAtGoogleRank){
-				result.setNewWeight(result.getNewWeight() / Math.log(1 + result.getRank()));
+				result.setNewWeight(result.getNewWeight() / Math.log1p(1 + result.getRank()));
 			}
 
 		}
@@ -136,7 +136,7 @@ public class GoogleRerank {
 			}
 			result.setNewWeight(weight / length);
 			if (lookatrank){
-				result.setNewWeight(result.getNewWeight() / Math.log(1 + result.getRank()));
+				result.setNewWeight(result.getNewWeight() / Math.log1p(1 + result.getRank()));
 			}
 		}
 		

@@ -3,7 +3,7 @@ package org.cl.nm417.data;
 public class DocumentFrequency {
 
 	private String term = "";
-	private int frequency;
+	private double frequency;
 	
 	public void setTerm(String term) {
 		this.term = term;
@@ -13,11 +13,11 @@ public class DocumentFrequency {
 		return term;
 	}
 
-	public void setFrequency(int frequency) {
+	public void setFrequency(double frequency) {
 		this.frequency = frequency;
 	}
 
-	public int getFrequency() {
+	public double getFrequency() {
 		return frequency;
 	}
 	

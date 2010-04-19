@@ -1,18 +1,15 @@
 package org.cl.nm417.google;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Pattern;
+import java.util.Date;
 
 import org.cl.nm417.data.Document;
 import org.cl.nm417.data.DocumentFrequency;
 import org.cl.nm417.json.JSONObject;
 import org.cl.nm417.xmlparser.DataParser;
+import org.jredis.JRedis;
+import org.jredis.ri.alphazero.JRedisClient;
 
 public class GoogleSearch {
 
@@ -65,7 +62,33 @@ public class GoogleSearch {
 
 	public static ArrayList<DocumentFrequency> getNumberOfResults(ArrayList<String> words) {
 		
-		HashMap<String, String> map = new HashMap<String, String>(1000);
+		try {
+			long start = new Date().getTime();
+			ArrayList<DocumentFrequency> freq = new ArrayList<DocumentFrequency>();
+			JRedis jredis = new JRedisClient("localhost", 6379);
+			for (String s: words){
+				if (!jredis.exists(s.toLowerCase())){
+					DocumentFrequency df = new DocumentFrequency();
+		  		  	df.setTerm(s.toLowerCase());
+		  		  	df.setFrequency(220680773);
+		  		  	freq.add(df);
+				} else {
+					double n = Double.parseDouble(new String(jredis.get(s.toLowerCase())));
+					DocumentFrequency df = new DocumentFrequency();
+		  		  	df.setTerm(s.toLowerCase());
+		  		  	df.setFrequency(n);
+		  		  	freq.add(df);
+				}
+			}
+			long end = new Date().getTime();
+			System.out.println("Lookup of " + freq.size() + " in " + ((end - start) / 1000) + " seconds");
+			return freq;
+		} catch (Exception ex){
+			ex.printStackTrace();
+		}
+		return null;
+		
+		/* HashMap<String, String> map = new HashMap<String, String>(1000);
 		ArrayList<DocumentFrequency> freq = new ArrayList<DocumentFrequency>();
 		try{
 		    FileInputStream fstream = new FileInputStream("/Users/nicolaas/Desktop/AlterEgo/ngrams/vocab");
@@ -109,7 +132,7 @@ public class GoogleSearch {
   		  	df.setFrequency(220680773);
   		  	freq.add(df);
 		}
-		return freq;
+		return freq; */
 
 	}
 	

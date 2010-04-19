@@ -200,6 +200,11 @@
 						<input type="text" size="4" value="100" id="nmbr_googlengram"/>
 					</td>
 				</tr>
+				<tr>
+					<td colspan="2">
+						<input type="button" id="loadNGram" value="Load Google N-Gram"/>
+					</td>
+				</tr>
 			</table>
 		</div>
 	</div>
@@ -351,6 +356,11 @@
 			parent.output.location.href = "showSearch.jsp" + querystring + "&rerank=false";
 			parent.output2.location.href = "showSearch.jsp" + querystring + "&rerank=true";
 			
+		});
+
+		$("#loadNGram").bind("click", function(ev){
+			parent.output.location.href = "loadNGram.jsp";
+			parent.output2.location.href = "about:blank";
 		});
 	
 	</script>

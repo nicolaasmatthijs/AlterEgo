@@ -36,6 +36,7 @@ public class AlterEgo {
 			}
 		}
 		writeProfile(profile);
+		writeFinalProfile(profile);
 		double end = new Date().getTime();
 		System.out.println("User profile generated in " + ((end - start) / 1000) + " seconds");
 		return profile;
@@ -62,6 +63,29 @@ public class AlterEgo {
 		}
 		return results;
 	}
+	
+	public static ArrayList<GoogleResult> finalSearchGoogle(String query, String user,
+		String method, boolean interleave, String interleaveMethod, 
+		boolean lookatrank, boolean umatching, boolean visited, int visitedW, String path,
+		ArrayList<GoogleResult> fResults){
+			ArrayList<GoogleResult> results = new ArrayList<GoogleResult>();
+			for (GoogleResult res: fResults){
+				results.add(res);
+			}
+			Profile profile = new Profile();
+			profile.setUserId(user);
+			profile.setUnigrams(readFinalUnigrams(user + "/" + path));
+			if (method.equals("lm")){
+				double totalWords = calculateTotalWords(profile);
+				profile = calculateLMStatistics(profile, totalWords);
+				results = GoogleRerank.applyLM(profile, results, interleave, interleaveMethod, lookatrank, totalWords, visited, visitedW);
+			} else if (method.equals("pclick")){
+				results = GoogleRerank.pClick(query, profile, results, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
+			} else {
+				results = GoogleRerank.findCommonalities(profile, results, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
+			}
+			return results;
+	}
 
 	private static double calculateTotalWords(Profile profile){
 		double totalWords = 0;
@@ -79,11 +103,16 @@ public class AlterEgo {
 	}
 
 	private static ArrayList<Unigram> readUnigrams(String user){
+		ArrayList<Unigram> unigrams = readFinalUnigrams(user + ".txt");
+		return unigrams;
+	}
+	
+	private static ArrayList<Unigram> readFinalUnigrams(String path){
 		ArrayList<Unigram> unigrams = new ArrayList<Unigram>();
 		try{
 		    // Open the file that is the first 
 		    // command line parameter
-		    FileInputStream fstream = new FileInputStream("/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/profiles/" + user + ".txt");
+			FileInputStream fstream = new FileInputStream("/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/profiles/" + path);
 		    // Get the object of DataInputStream
 		    DataInputStream in = new DataInputStream(fstream);
 		    BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -110,6 +139,114 @@ public class AlterEgo {
 		
 		try {
 		    FileWriter fstream = new FileWriter("/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/profiles/" + profile.getUserId() + ".txt");
+		    BufferedWriter out = new BufferedWriter(fstream);
+		    for (Unigram u: profile.getUnigrams()){
+		    	out.write(u.getWeight() + " => " + u.getText() + "\n");
+		    }
+		    out.close();
+		} catch (Exception e){
+			System.err.println("Error: " + e.getMessage());
+		}
+		
+	}
+	
+	private static void writeFinalProfile(Profile profile){
+		
+		try {
+			String extention = "";
+			
+			// Weighting
+			String weighting = (String)config.get("weighting");
+			if (weighting.equals("tf")){
+				extention += "_t";
+			} else if (weighting.equals("tfidf")){
+				extention += "_ti";
+			} else if (weighting.equals("bm25")){
+				extention += "_b";
+			}
+			
+			// Title
+			boolean useRelative = (Boolean)config.get("useRelativeW");
+			boolean title = (Boolean)config.get("title");
+			if (title && useRelative){
+				extention += "_r";
+			} else if (title){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+			// Meta description
+			boolean md = (Boolean)config.get("metadescription");
+			if (md && useRelative){
+				extention += "_r";
+			} else if (md){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+			// Meta keywords
+			boolean mk = (Boolean)config.get("metakeywords");
+			if (mk && useRelative){
+				extention += "_r";
+			} else if (mk){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+			// Plain text
+			boolean pt = (Boolean)config.get("plaintext");
+			if (pt && useRelative){
+				extention += "_r";
+			} else if (pt){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+			// Terms
+			boolean t = (Boolean)config.get("terms");
+			if (t && useRelative){
+				extention += "_r";
+			} else if (t){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+			// C&C Parsed
+			boolean cc = (Boolean)config.get("ccparse");
+			if (cc && useRelative){
+				extention += "_r";
+			} else if (cc){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+			// Filtering
+			boolean allPos = (Boolean)config.get("posAll");
+			boolean nGram = (Boolean)config.get("googlengram");
+			boolean posNoun = (Boolean)config.get("posNoun");
+			if (nGram){
+				extention += "_g";
+			} else if (posNoun){
+				extention += "_wn";
+			} else if (allPos){
+				extention += "_n";
+			}
+			
+			// Exclude duplicate pages
+			boolean excludeDuplicate = (Boolean)config.get("excludeDuplicate");
+			if (excludeDuplicate){
+				extention += "_y";
+			} else {
+				extention += "_n";
+			}
+			
+		    FileWriter fstream = new FileWriter("/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/profiles/" + profile.getUserId() + "/" + profile.getUserId() + extention + ".txt");
 		    BufferedWriter out = new BufferedWriter(fstream);
 		    for (Unigram u: profile.getUnigrams()){
 		    	out.write(u.getWeight() + " => " + u.getText() + "\n");
