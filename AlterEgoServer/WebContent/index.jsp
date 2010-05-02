@@ -2,7 +2,8 @@
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
+
+<%@page import="java.io.File"%><html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1" />
 <title>AlterEgo 0.2</title>
@@ -217,6 +218,11 @@
 				</td>
 			</tr>
 			<tr>
+				<td colspan="3" id="profilenamecontainer">
+					<select></select>
+				</td>
+			</tr>
+			<tr>
 				<td colspan="3">
 					<select id="rerankmethod">
 						<option value="matching">Matching</option>
@@ -348,7 +354,9 @@
 			var visited = $("#chk_visited").attr("checked");
 			var visitedW = $("#nmbr_visited").val();
 
-			var querystring = "?interleaveMethod=" + interleaveMethod + "&visitedW=" + visitedW + "&visited=" + visited + "&lookatrank=" + lookatrank + "&showall=" + showall + "&interleave=" + interleave + "&user=" + user + "&query=" + escape(query) + "&method=" + method + "&page=1";
+			var profilename = $("#profilename").val();
+			
+			var querystring = "?profilename=" + profilename + "&interleaveMethod=" + interleaveMethod + "&visitedW=" + visitedW + "&visited=" + visited + "&lookatrank=" + lookatrank + "&showall=" + showall + "&interleave=" + interleave + "&user=" + user + "&query=" + escape(query) + "&method=" + method + "&page=1";
 
 			parent.output.location.href = "about:blank";
 			parent.output2.location.href = "about:blank";
@@ -362,6 +370,25 @@
 			parent.output.location.href = "loadNGram.jsp";
 			parent.output2.location.href = "about:blank";
 		});
+
+		var getProfiles = function(){
+			var user = $("#user").val();
+			$.ajax({
+				url: 'getProfiles.jsp?userid=' + user,
+				success: function(data) {
+				    $('#profilenamecontainer').html(data);
+				},
+				error: function(){
+					alert("No profile available for this user");
+				}
+			});
+		};
+
+		$("#user").bind("change", function(ev){
+			getProfiles();
+		});
+
+		getProfiles();
 	
 	</script>
 	

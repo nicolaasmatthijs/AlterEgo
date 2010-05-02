@@ -15,6 +15,7 @@
 		String user = request.getParameter("user");
 		String query = request.getParameter("query");
 		String method = request.getParameter("method");
+		String profilename = request.getParameter("profilename");
 		int pagen = Integer.parseInt(request.getParameter("page"));
 		boolean rerank = false;
 		if (request.getParameter("rerank").equals("true")){
@@ -51,7 +52,7 @@
 		
 		String middle = "<ol>";
 		
-		ArrayList<GoogleResult> results = AlterEgo.SearchGoogle(query, user, rerank, method, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
+		ArrayList<GoogleResult> results = AlterEgo.SearchGoogle(query, user, profilename, rerank, method, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
 		int record = (pagen - 1) * 10;
 		int start = 0;
 		int end = 50;

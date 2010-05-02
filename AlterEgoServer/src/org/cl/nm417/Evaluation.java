@@ -1,5 +1,7 @@
 package org.cl.nm417;
 
+import java.net.URLDecoder;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
@@ -12,6 +14,7 @@ import org.cl.nm417.google.GoogleSnippet;
 
 import com.mysql.jdbc.Connection;
 import com.mysql.jdbc.PreparedStatement;
+import com.mysql.jdbc.ResultSet;
 
 public class Evaluation {
 
@@ -36,6 +39,7 @@ public class Evaluation {
 		// Select the next snippet for relevance judgment
 		if (toEvaluate.size() > 0){
 			next = toEvaluate.get((int) (Math.random() * (toEvaluate.size() - 1)));
+			next.setRemaining(toEvaluate.size());
 		}
 		Database.closeConnection(conn);
 		return next;
@@ -64,6 +68,23 @@ public class Evaluation {
 	}
 	
 	public static String getRow(String[] fields, boolean bold){
+		String html = "<tr>";
+		for (String s: fields){
+			html += "<td>";
+			if (bold){
+				html += "<b>";
+			}
+			html += s;
+			if (bold){
+				html += "</b>";
+			}
+			html += "</td>";
+		}
+		html += "</tr>";
+		return html;
+	}
+	
+	public static String getRow(ArrayList<String> fields, boolean bold){
 		String html = "<tr>";
 		for (String s: fields){
 			html += "<td>";
@@ -154,6 +175,42 @@ public class Evaluation {
 		}
 		Database.closeConnection(conn);
 		return results;
+	}
+	
+	public static ArrayList<String> getQueries(String userid){
+		ArrayList <String> queries = new ArrayList <String>();
+		Connection conn = Database.openConnection();
+		PreparedStatement stmt = null; ResultSet rs = null;
+		
+		try {
+		  
+			// Get a statement from the connection
+			stmt = (PreparedStatement) conn.prepareStatement("SELECT query FROM evaluation WHERE userid=? GROUP BY query");
+			stmt.setString(1, userid);
+			// Execute the query
+			rs = (ResultSet) stmt.executeQuery();
+			
+			// Loop through the result set
+			while( rs.next() ) {
+				queries.add(URLDecoder.decode(rs.getString("query"),"utf-8"));
+			}
+
+		} catch (Exception ex){
+		} finally {
+			// Close the result set, statement and the connection
+			if (stmt != null){
+				try {
+					stmt.close();
+				} catch (SQLException e) {}
+			}
+			if (rs != null){
+				try {
+					rs.close();
+				} catch (SQLException e) {}
+			}
+		}
+		Database.closeConnection(conn);
+		return queries;
 	}
 	
 }

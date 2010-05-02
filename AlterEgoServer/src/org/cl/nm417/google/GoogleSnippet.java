@@ -10,6 +10,7 @@ public class GoogleSnippet {
 	private String url;
 	private String summary;
 	private int relevance;
+	private int remaining;
 	
 	public void setId(int id) {
 		this.id = id;
@@ -73,6 +74,14 @@ public class GoogleSnippet {
 
 	public int getRelevance() {
 		return relevance;
+	}
+
+	public void setRemaining(int remaining) {
+		this.remaining = remaining;
+	}
+
+	public int getRemaining() {
+		return remaining;
 	}
 	
 }

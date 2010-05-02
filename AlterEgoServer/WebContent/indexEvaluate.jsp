@@ -27,6 +27,14 @@
 				<tr style="height:25px; vertical-align:top;">
 					<td style="width:200px;">
 						<select id="user" style="width: 150px;">
+							<option value="usr_3484406">usr_3484406</option>
+							<option value="usr_7318689">usr_7318689</option>
+							<option value="usr_597873">usr_597873</option>
+							<option value="usr_6326553">usr_6326553</option>
+							<option value="usr_6422669">usr_6422669</option>
+							<option value="usr_2543662">usr_2543662</option>
+						</select>
+						<!-- <select id="user" style="width: 150px;">
 							<optgroup label="Development Set">
 								<option value="usr_3484406">usr_3484406</option>
 							</optgroup>
@@ -67,7 +75,7 @@
 								<option value="usr_8613294">usr_8613294</option>
 								<option value="usr_9918599">usr_9918599</option>
 							</optgroup>
-						</select>
+						</select> -->
 					</td>
 					<td style="width: 400px">
 						<input type="text" size="50" id="searchquery"/>

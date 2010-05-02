@@ -43,12 +43,12 @@ public class AlterEgo {
 		
 	}
 	
-	public static ArrayList<GoogleResult> SearchGoogle(String query, String user, 
+	public static ArrayList<GoogleResult> SearchGoogle(String query, String user, String profilename, 
 			boolean rerank, String method, boolean interleave, String interleaveMethod, 
 			boolean lookatrank, boolean umatching, boolean visited, int visitedW){
 		Profile profile = new Profile();
 		profile.setUserId(user);
-		profile.setUnigrams(readUnigrams(user));
+		profile.setUnigrams(readFinalUnigrams(user + "/" + profilename));
 		ArrayList<GoogleResult> results = GoogleSearch.doGoogleSearch(query);
 		if (rerank){
 			if (method.equals("lm")){
@@ -66,12 +66,14 @@ public class AlterEgo {
 	
 	public static ArrayList<GoogleResult> finalSearchGoogle(String query, String user,
 		String method, boolean interleave, String interleaveMethod, 
-		boolean lookatrank, boolean umatching, boolean visited, int visitedW, String path,
+		boolean lookatrank, boolean visited, int visitedW, String path,
 		ArrayList<GoogleResult> fResults){
 			ArrayList<GoogleResult> results = new ArrayList<GoogleResult>();
 			for (GoogleResult res: fResults){
+				res.setNewWeight(0);
 				results.add(res);
 			}
+			results = GoogleRerank.doSort(results);
 			Profile profile = new Profile();
 			profile.setUserId(user);
 			profile.setUnigrams(readFinalUnigrams(user + "/" + path));
@@ -80,9 +82,11 @@ public class AlterEgo {
 				profile = calculateLMStatistics(profile, totalWords);
 				results = GoogleRerank.applyLM(profile, results, interleave, interleaveMethod, lookatrank, totalWords, visited, visitedW);
 			} else if (method.equals("pclick")){
-				results = GoogleRerank.pClick(query, profile, results, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
+				results = GoogleRerank.pClick(query, profile, results, interleave, interleaveMethod, lookatrank, false, visited, visitedW);
+			} else if (method.equals("umatching")) {
+				results = GoogleRerank.findCommonalities(profile, results, interleave, interleaveMethod, lookatrank, true, visited, visitedW);
 			} else {
-				results = GoogleRerank.findCommonalities(profile, results, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
+				results = GoogleRerank.findCommonalities(profile, results, interleave, interleaveMethod, lookatrank, false, visited, visitedW);
 			}
 			return results;
 	}

@@ -168,6 +168,14 @@ public class UserProfile {
 	private static void extractStatistics(DataParser documents, boolean useMetakeywords, boolean useMetadescription,
 			boolean useTitle, boolean useTerms, boolean usePlainText, boolean useCCParse) {
 		
+		metakeywords = 0;
+		metadescription = 0;
+		terms = 0;
+		titles = 0;
+		plaintexts = 0;
+		ccparses = 0;
+		total = 0;
+		
 		for (Document d: documents.getDocuments()){
 			HashMap<String, Unigram> arl = new HashMap<String, Unigram>();
 			
@@ -330,18 +338,27 @@ public class UserProfile {
 			words.add(u.getText().toLowerCase());
 		}
 		ArrayList<DocumentFrequency> freq = GoogleSearch.getNumberOfResults(words);
+		System.out.println("Got IDFs");
 		
 		Pattern pattern = Pattern.compile("\\s+");
 		
-		HashMap<Document, ArrayList<String>> docs = new HashMap<Document, ArrayList<String>>();
+		int i = 0;
+		//HashMap<Document, ArrayList<String>> docs = new HashMap<Document, ArrayList<String>>();
+		HashMap<String, Long> docs = new HashMap<String, Long>();
 		for (Document d: documents.getDocuments()){
+			
+			i++;
+			System.out.println("Doing document " + i + " of " + documents.getDocuments().size());
+			
 			ArrayList<String> allWords = new ArrayList<String>();
 			//Metakeywords
 			if (useMetakeywords){
 				for (String s: d.getMetakeywords()){
 					String[] spl = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
 					for (String sp: spl){
-						allWords.add(sp);
+						if (!allWords.contains(sp)){
+							allWords.add(sp);
+						}
 					}
 				}
 			}
@@ -349,21 +366,30 @@ public class UserProfile {
 			if (useMetadescription){
 				String[] spl = pattern.split(d.getMetadescription());
 				for (String s: spl){
-					allWords.add(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+					String toAdd = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
+					if (!allWords.contains(toAdd)){
+						allWords.add(toAdd);
+					}
 				}
 			}
 			//Plaintext
 			if (usePlaintext){
 				String[] spl = pattern.split(d.getPlaintext());
 				for (String s: spl){
-					allWords.add(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+					String toAdd = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
+					if (!allWords.contains(toAdd)){
+						allWords.add(toAdd);
+					}
 				}
 			}
 			//Title
 			if (useTitle){
 				String[] spl = pattern.split(d.getTitle());
 				for (String s: spl){
-					allWords.add(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+					String toAdd = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
+					if (!allWords.contains(toAdd)){
+						allWords.add(toAdd);
+					}
 				}
 			}
 			//Terms
@@ -371,7 +397,10 @@ public class UserProfile {
 				for (String s: d.getTerms()){
 					String[] spl = pattern.split(s);
 					for (String sp: spl){
-						allWords.add(sp.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+						String toAdd = sp.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
+						if (!allWords.contains(toAdd)){
+							allWords.add(toAdd);
+						}
 					}
 				}
 			}
@@ -380,15 +409,26 @@ public class UserProfile {
 				for (Sentence s: d.getParsed()){
 					for (SentenceItem item: s.getSentence()){
 						if (item.getPOS().startsWith("NN")){
-							allWords.add(item.getWord().replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+							String toAdd = item.getWord().replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
+							if (!allWords.contains(toAdd)){
+								allWords.add(toAdd);
+							}
 						}
 					}
 				}
 			}
-			docs.put(d, allWords);
+			
+			for (String s: allWords){
+				if (docs.containsKey(s)){
+					docs.put(s, docs.get(s) + 1);
+				}
+			}
+			
+			//docs.put(d, allWords);
+			
 		}
 		
-		int i = 0;
+		i = 0;
 		
 		for (Unigram u: profile.getUnigrams()){
 		
@@ -400,9 +440,12 @@ public class UserProfile {
 			// Changed original formula to have log of document frequency
 			double ni = Math.log(getNumberOfResults(u.getText().toLowerCase(), freq));
 			double ri = 0;
+			if (docs.containsKey(u.getText().toLowerCase())){
+				ri = docs.get(u.getText().toLowerCase());
+			}
 			double R = documents.getDocuments().size();
 			
-			ArrayList<String> arlUrl = new ArrayList<String>();
+			/* ArrayList<String> arlUrl = new ArrayList<String>();
 			for (Document d: documents.getDocuments()){
 				
 				boolean exists = false;
@@ -410,7 +453,7 @@ public class UserProfile {
 				//Prevent the same URL being used again
 				if ((Boolean)AlterEgo.config.get("excludeDuplicate") == false ||
 						((Boolean)AlterEgo.config.get("excludeDuplicate") == true && !arlUrl.contains(d.getUrl()))){
-				
+					
 					ArrayList<String> allWords = docs.get(d);
 					if (allWords.contains(u.getText().toLowerCase())){
 						exists = true;
@@ -425,7 +468,7 @@ public class UserProfile {
 					ri++;
 				}
 				
-			}
+			} */
 			
 			double weight = Math.log(((ri + 0.5)*(N - ni + 0.5))/((ni + 0.5)*(R-ri+0.5)));
 			u.setWeight(weight);

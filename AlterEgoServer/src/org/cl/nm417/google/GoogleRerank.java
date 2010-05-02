@@ -65,8 +65,11 @@ public class GoogleRerank {
 		if (visited){
 			HashMap<String, Integer> arlVisited = getURLs(user);
 			for (GoogleResult result: results){
+				if (result.getUrl().contains("ajaxian")){
+					System.out.println(result.getUrl());
+				}
 				if (arlVisited.containsKey(result.getUrl().toLowerCase())){
-					result.setNewWeight(result.getNewWeight() * visitedW * arlVisited.get(result.getUrl().toLowerCase()));
+					result.setNewWeight((result.getNewWeight() + 1) + visitedW * arlVisited.get(result.getUrl().toLowerCase()));
 					System.out.println(result.getUrl() + " => " + arlVisited.get(result.getUrl().toLowerCase()));
 				}
 			}
@@ -283,6 +286,9 @@ public class GoogleRerank {
 			boolean interleave, String interleaveMethod, boolean lookatrank, boolean umatching,boolean visited, int visitedW) {
 		HashMap<String, ArrayList<String>> searches = getPClickData(profile.getUserId());
 		try {
+			for (GoogleResult res: results){
+				res.setNewWeight(0);
+			}
 			String key = URLDecoder.decode(query.toLowerCase().replaceAll("[+]", " "),"utf-8");
 			if (searches.containsKey(key)){
 				ArrayList<String> urls = searches.get(key);

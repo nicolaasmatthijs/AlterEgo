@@ -66,7 +66,11 @@ public class DataParser {
 
 	private String determinePath(String userid) {
 		String basepath = "/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/";
-		String path = "development/" + userid + ".xml";
+		String path = "eval/" + userid + ".xml";
+		if (new File(basepath + path).exists()){
+			return basepath + path;
+		} 
+		path = "development/" + userid + ".xml";
 		if (new File(basepath + path).exists()){
 			return basepath + path;
 		} 

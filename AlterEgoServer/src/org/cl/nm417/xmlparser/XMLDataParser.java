@@ -4,7 +4,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 
 import org.cl.nm417.AlterEgo;
 import org.cl.nm417.data.*;
@@ -195,7 +198,15 @@ public class XMLDataParser extends DefaultHandler {
 			//headings = new ArrayList<Heading>();
 			//textuals = new ArrayList<Textual>();
 			plaintextBuilder = new StringBuilder();
-			getDocuments().add(currentDocument);
+			try {
+				Date d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(currentDocument.getVisitdate());
+				Date rd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("2010-04-29 08:00:00");
+				if (d.getTime() < rd.getTime()){
+					getDocuments().add(currentDocument);
+				}
+			} catch (ParseException e) { 
+				e.printStackTrace();
+			}
 			currentDocument = new Document();
 		} else if (qName.equals("url")){
 			inURL = false;

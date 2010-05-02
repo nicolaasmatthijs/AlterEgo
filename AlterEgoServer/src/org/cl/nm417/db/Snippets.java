@@ -21,7 +21,7 @@ public class Snippets {
 		  
 			// Get a statement from the connection
 			stmt = (PreparedStatement) conn.prepareStatement("SELECT * FROM evaluation WHERE query=? AND userid=?");
-			stmt.setString(1, query);
+			stmt.setString(1, URLEncoder.encode(query,"utf-8"));
 			stmt.setString(2, userid);
 			// Execute the query
 			rs = (ResultSet) stmt.executeQuery();
@@ -36,7 +36,13 @@ public class Snippets {
 				snippet.setTitle(URLDecoder.decode(rs.getString("title"),"utf-8"));
 				snippet.setUrl(rs.getString("url"));
 				snippet.setSummary(URLDecoder.decode(rs.getString("summary"),"utf-8"));
-				snippet.setRelevance(rs.getInt("relevance"));
+				int rel = rs.getInt("relevance");
+				if (rel == 2){
+					rel = 1;
+				} else if (rel == 3){
+					rel = 2;
+				}
+				snippet.setRelevance(rel);
 				results.add(snippet);
 			}
 
@@ -66,7 +72,7 @@ public class Snippets {
 				stmt = (PreparedStatement) conn.prepareStatement("INSERT INTO evaluation " + 
 						"(userid, query, grank, title, url, summary, relevance) VALUES (?,?,?,?,?,?,?)");
 				stmt.setString(1, userid);
-				stmt.setString(2, query);
+				stmt.setString(2, URLEncoder.encode(query,"utf-8"));
 				stmt.setInt(3, res.getOriginalRank());
 				stmt.setString(4, URLEncoder.encode(res.getTitle(),"utf-8"));
 				stmt.setString(5, res.getUrl());
