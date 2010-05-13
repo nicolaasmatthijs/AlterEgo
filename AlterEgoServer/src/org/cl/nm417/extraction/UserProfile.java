@@ -5,15 +5,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import org.cl.nm417.AlterEgo;
 import org.cl.nm417.data.Document;
-import org.cl.nm417.data.DocumentFrequency;
 import org.cl.nm417.data.Profile;
-import org.cl.nm417.data.Sentence;
-import org.cl.nm417.data.SentenceItem;
 import org.cl.nm417.data.Unigram;
 import org.cl.nm417.google.GoogleSearch;
 import org.cl.nm417.xmlparser.DataParser;
@@ -35,7 +33,9 @@ public class UserProfile {
 	private static int plaintexts = 0;
 	private static int ccparses = 0;
 	private static int total = 0;
+	private static boolean isOpen = false;
 	
+	@SuppressWarnings("unchecked")
 	public static ArrayList<Unigram> extractUnigramProfile(DataParser documents, boolean usePlaintext, 
 			boolean useMetakeywords, boolean useMetadescription, boolean useTitle, boolean useTerms,
 			boolean useCCParse, int plaintextW, int metakeywordsW, int metadescriptionW, 
@@ -45,12 +45,15 @@ public class UserProfile {
 		ArrayList<String> arlUrl = new ArrayList<String>();
 		
 		try {
-			openDictionary();
+			if (!isOpen){
+				openDictionary();
+				isOpen = true;
+			}
 		} catch (Exception ex){
 			ex.printStackTrace();
 		}
 		
-		if ((Boolean)AlterEgo.config.get("useRelativeW")){
+		if (!AlterEgo.config.containsKey("statistics") && (Boolean)AlterEgo.config.get("useRelativeW")){
 			extractStatistics(documents, useMetakeywords, useMetadescription, useTitle, useTerms, usePlaintext, useCCParse);
 		}
 		
@@ -69,8 +72,7 @@ public class UserProfile {
 			
 			//Plaintext
 			ArrayList<String> plain = new ArrayList<String>();
-			String[] splPT = pattern.split(d.getPlaintext());
-			for (String s: splPT){
+			for (String s: d.getPlaintext()){
 				plain.add(s);
 			}
 			map = addUnigrams(usePlaintext, plaintextW, map, arlUrl, d, plain, plaintexts);
@@ -89,18 +91,9 @@ public class UserProfile {
 			//CC Parse Results
 			if (useCCParse){
 				ArrayList<String> phrases = new ArrayList<String>();
-				for (Sentence s: d.getParsed()){
-					String phrase = "";
-					for (SentenceItem item: s.getSentence()){
-						if (item.getPOS().startsWith("NN")){
-							phrase += item.getWord() + " ";
-						} else if (phrase.length() != 0) {
-							phrases.add(phrase);
-							phrase = "";
-						}
-					}
-					if (phrase.length() != 0){
-						phrases.add(phrase);
+				for (ArrayList<String> s: d.getParsed()){
+					for (String word: s){
+						phrases.add(word);
 					}
 				}
 				map = addUnigrams(useCCParse, CCParseW, map, arlUrl, d, phrases, ccparses);
@@ -112,24 +105,29 @@ public class UserProfile {
 			
 		}
 		
-		ArrayList<DocumentFrequency> freq = new ArrayList<DocumentFrequency>();
+		HashMap<String, Double> freq = new HashMap<String, Double>();
 		if ((Boolean)AlterEgo.config.get("googlengram") || ((String)AlterEgo.config.get("weighting")).equals("tfidf")){
 			//Get IDFs
-			ArrayList<String> words = new ArrayList<String>();
-			for (String s: map.keySet()){
-				words.add(s);
+			if (AlterEgo.config.get("ngrams") == null){
+				ArrayList<String> words = new ArrayList<String>();
+				for (String s: map.keySet()){
+					words.add(s);
+				}
+				freq = GoogleSearch.getNumberOfResults(words);
+			} else {
+				freq = (HashMap<String, Double>) AlterEgo.config.get("ngrams");
 			}
-			freq = GoogleSearch.getNumberOfResults(words);
 		}
 		
 		if ((Boolean)AlterEgo.config.get("googlengram")){
 			int limit = (Integer)AlterEgo.config.get("googlengramW");
 			HashMap<String, Unigram> newMap = new HashMap<String, Unigram>();
 			for (String s: map.keySet()){
-				double ni = getNumberOfResults(s, freq);
-				if (ni >= limit){
-					newMap.put(s, map.get(s));
-				}
+				if (freq.containsKey(s.toLowerCase())){
+					if (freq.get(s.toLowerCase()) >= limit){
+						newMap.put(s, map.get(s));
+					}
+				} 
 			}
 			map = newMap;
 		}
@@ -137,9 +135,12 @@ public class UserProfile {
 		if (((String)AlterEgo.config.get("weighting")).equals("tfidf")){	
 			
 			for (String s: map.keySet()){
-				double ni = Math.log(getNumberOfResults(s, freq));
 				Unigram u = map.get(s);
-				u.setWeight(u.getWeight() / Math.log(ni));	
+				double ni = 220680773.0;
+				if (freq.containsKey(s.toLowerCase())){
+					ni = freq.get(s.toLowerCase());
+				}
+				u.setWeight(u.getWeight() / Math.log(ni));		
 			}
 			
 		}
@@ -165,7 +166,7 @@ public class UserProfile {
 		
 	}
 	
-	private static void extractStatistics(DataParser documents, boolean useMetakeywords, boolean useMetadescription,
+	public static void extractStatistics(DataParser documents, boolean useMetakeywords, boolean useMetadescription,
 			boolean useTitle, boolean useTerms, boolean usePlainText, boolean useCCParse) {
 		
 		metakeywords = 0;
@@ -177,63 +178,94 @@ public class UserProfile {
 		total = 0;
 		
 		for (Document d: documents.getDocuments()){
-			HashMap<String, Unigram> arl = new HashMap<String, Unigram>();
 			
 			//Meta keywords
-			arl = addUnigrams(useMetakeywords, 1, arl, new ArrayList<String>(), d, d.getMetakeywords(), 1);
-			metakeywords += arl.size();
-			
-			//Meta description
-			arl = new HashMap<String, Unigram>();
-			ArrayList<String> desc = new ArrayList<String>();
-			String[] splMD = pattern.split(d.getMetadescription());
-			for (String s: splMD){
-				desc.add(s);
-			}
-			arl = addUnigrams(useMetadescription, 1, arl, new ArrayList<String>(), d, desc, 1);
-			metadescription += arl.size();
-			
-			//Title
-			ArrayList<String> title = new ArrayList<String>();
-			String[] splT = pattern.split(d.getTitle());
-			for (String s: splT){
-				title.add(s);
-			}
-			arl = new HashMap<String, Unigram>();
-			arl = addUnigrams(useTitle, 1, arl, new ArrayList<String>(), d, title, 1);
-			titles += arl.size();
-			
-			//Plaintext
-			ArrayList<String> plain = new ArrayList<String>();
-			String[] splPT = pattern.split(d.getPlaintext());
-			for (String s: splPT){
-				plain.add(s);
-			}
-			arl = new HashMap<String, Unigram>();
-			arl = addUnigrams(usePlainText, 1, arl, new ArrayList<String>(), d, plain, 1);
-			plaintexts += arl.size();
-			
-			//Terms
-			arl = new HashMap<String, Unigram>();
-			arl = addUnigrams(useTerms, 1, arl, new ArrayList<String>(), d, d.getTerms(), 1);
-			terms += arl.size();
-			
-			//CCParse
-			if (useCCParse){
-				ArrayList<String> phrases = new ArrayList<String>();
-				for (Sentence s: d.getParsed()){
-					for (SentenceItem item: s.getSentence()){
-						if (item.getPOS().startsWith("NN")){
-							phrases.add(item.getWord());
-						} 
+			for (String s: d.getMetakeywords()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if ((Boolean)AlterEgo.config.get("posNoun") && inDictionary(spl, POS.NOUN)){
+						metakeywords++;
+						total++;
+					} else if (!(Boolean)AlterEgo.config.get("posNoun")){
+						metakeywords++;
+						total++;
 					}
 				}
-				arl = new HashMap<String, Unigram>();
-				arl = addUnigrams(useCCParse, 1, arl, new ArrayList<String>(), d, phrases, 1);
-				ccparses += arl.size();
 			}
 			
-			total = metakeywords + metadescription + titles + plaintexts + terms + ccparses;
+			//Meta description
+			String[] splMD = pattern.split(d.getMetadescription());
+			for (String s: splMD){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if ((Boolean)AlterEgo.config.get("posNoun") && inDictionary(spl, POS.NOUN)){
+						metadescription++;
+						total++;
+					} else if (!(Boolean)AlterEgo.config.get("posNoun")){
+						metadescription++;
+						total++;
+					}
+				}
+			}
+			
+			//Plaintext
+			for (String s: d.getPlaintext()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if ((Boolean)AlterEgo.config.get("posNoun") && inDictionary(spl, POS.NOUN)){
+						plaintexts++;
+						total++;
+					} else if (!(Boolean)AlterEgo.config.get("posNoun")){
+						plaintexts++;
+						total++;
+					}
+				}
+			}
+			
+			//Title
+			String[] splT = pattern.split(d.getTitle());
+			for (String s: splT){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if ((Boolean)AlterEgo.config.get("posNoun") && inDictionary(spl, POS.NOUN)){
+						titles++;
+						total++;
+					} else if (!(Boolean)AlterEgo.config.get("posNoun")){
+						titles++;
+						total++;
+					}
+				}
+			}
+			
+			//Terms
+			for (String s: d.getTerms()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if ((Boolean)AlterEgo.config.get("posNoun") && inDictionary(spl, POS.NOUN)){
+						terms++;
+						total++;
+					} else if (!(Boolean)AlterEgo.config.get("posNoun")){
+						terms++;
+						total++;
+					}
+				}
+			}
+			
+			//CC Parse Results
+			for (ArrayList<String> s: d.getParsed()){
+				for (String word: s){
+					String[] split = pattern.split(word.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+					for (String spl: split){
+						if ((Boolean)AlterEgo.config.get("posNoun") && inDictionary(spl, POS.NOUN)){
+							ccparses++;
+							total++;
+						} else if (!(Boolean)AlterEgo.config.get("posNoun")){
+							ccparses++;
+							total++;
+						}
+					}
+				}
+			}
 			
 		}
 		
@@ -245,9 +277,190 @@ public class UserProfile {
 		System.out.println("CCParse => " + ccparses);
 		
 	}
+	
+	public static HashMap<String, String> getWordsInDict(DataParser documents){
+		
+		try {
+			if (!isOpen){
+				openDictionary();
+				isOpen = true;
+			}
+		} catch (Exception ex){
+			ex.printStackTrace();
+		}
+		
+		Long start = new Date().getTime();
+		
+		HashMap<String, String> map = new HashMap<String, String>();
+		for (Document d: documents.getDocuments()){
+			
+			//Meta keywords
+			for (String s: d.getMetakeywords()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl) && inDictionary(spl, POS.NOUN)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Meta description
+			String[] splMD = pattern.split(d.getMetadescription());
+			for (String s: splMD){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl) && inDictionary(spl, POS.NOUN)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Plaintext
+			for (String s: d.getPlaintext()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl) && inDictionary(spl, POS.NOUN)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Title
+			String[] splT = pattern.split(d.getTitle());
+			for (String s: splT){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl) && inDictionary(spl, POS.NOUN)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Terms
+			for (String s: d.getTerms()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl) && inDictionary(spl, POS.NOUN)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//CC Parse Results
+			for (ArrayList<String> s: d.getParsed()){
+				for (String word: s){
+					String[] split = pattern.split(word.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+					for (String spl: split){
+						if (!map.containsKey(spl) && inDictionary(spl, POS.NOUN)){
+							map.put(spl, "");
+						}
+					}
+				}
+			}
+			
+		}
+		
+		Long end = new Date().getTime();
+		System.out.println("Got dictionary entries in " + (end - start) + " ms");
+		
+		return map;
+		
+	}
+	
+	public static HashMap<String, Double> getGoogleNGrams(DataParser documents){
+		
+		Long start = new Date().getTime();
+		
+		HashMap<String, String> map = new HashMap<String, String>();
+		int i = 0;
+		for (Document d: documents.getDocuments()){
+			
+			//Meta keywords
+			for (String s: d.getMetakeywords()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Meta description
+			String[] splMD = pattern.split(d.getMetadescription());
+			for (String s: splMD){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Plaintext
+			for (String s: d.getPlaintext()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Title
+			String[] splT = pattern.split(d.getTitle());
+			for (String s: splT){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//Terms
+			for (String s: d.getTerms()){
+				String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+				for (String spl: split){
+					if (!map.containsKey(spl)){
+						map.put(spl, "");
+					}
+				}
+			}
+			
+			//CC Parse Results
+			for (ArrayList<String> s: d.getParsed()){
+				for (String word: s){
+					String[] split = pattern.split(word.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
+					for (String spl: split){
+						if (!map.containsKey(spl)){
+							map.put(spl, "");
+						}
+					}
+				}
+			}
+			
+			i++;
+			System.out.println("Processed " + i + " of " + documents.getDocuments().size());
+			
+		}
+		
+		Long end = new Date().getTime();
+		
+		ArrayList<String> list = new ArrayList<String>();
+		for (String s: map.keySet()){
+			list.add(s);
+		}
+		HashMap<String, Double> ngrams = GoogleSearch.getNumberOfResults(list);
+		System.out.println("Got Google NGram entries in " + (end - start) + " ms");
+		
+		return ngrams;
+		
+	}
 
+	@SuppressWarnings("unchecked")
 	private static HashMap<String, Unigram> addUnigrams(boolean use, int weight, HashMap<String, Unigram> map, 
 			ArrayList<String> arlUrl, Document d, ArrayList<String> strings, int relative){
+		HashMap<String, String> dict = (HashMap<String, String>)AlterEgo.config.get("dict");
 		if (use && !arlUrl.contains(d.getUrl())){
 			for (String s: strings){
 				if (s != null){
@@ -255,9 +468,19 @@ public class UserProfile {
 						String[] split = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
 						for(String kw: split){
 							if (!kw.equals(null) && kw.length() > 1){
+								boolean inDict = false;
+								if (((Boolean)AlterEgo.config.get("posNoun"))){
+									if (dict != null){
+										if (dict.containsKey(kw)){
+											inDict = true;
+										}
+									} else {
+										inDict = inDictionary(kw, POS.NOUN);
+									}
+								}
 								if ((Boolean)AlterEgo.config.get("posAll") || 
 										(Boolean)AlterEgo.config.get("googlengram") ||
-										((Boolean)AlterEgo.config.get("posNoun") && inDictionary(kw, POS.NOUN)) || 
+										((Boolean)AlterEgo.config.get("posNoun") && inDict) || 
 										((Boolean)AlterEgo.config.get("posVerb") && inDictionary(kw, POS.VERB)) || 
 										((Boolean)AlterEgo.config.get("posAdjective") && inDictionary(kw, POS.ADJECTIVE)) || 
 										((Boolean)AlterEgo.config.get("posAdverb") && inDictionary(kw, POS.ADVERB))){
@@ -280,9 +503,19 @@ public class UserProfile {
 					} else {
 						s = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
 						if (!s.equals(null) && s.length() > 1){
+							boolean inDict = false;
+							if (((Boolean)AlterEgo.config.get("posNoun"))){
+								if (dict != null){
+									if (dict.containsKey(s)){
+										inDict = true;
+									}
+								} else {
+									inDict = inDictionary(s, POS.NOUN);
+								}
+							}
 							if ((Boolean)AlterEgo.config.get("posAll") || 
 									(Boolean)AlterEgo.config.get("googlengram") ||
-									((Boolean)AlterEgo.config.get("posNoun") && inDictionary(s, POS.NOUN)) || 
+									((Boolean)AlterEgo.config.get("posNoun") && inDict) || 
 									((Boolean)AlterEgo.config.get("posVerb") && inDictionary(s, POS.VERB)) || 
 									((Boolean)AlterEgo.config.get("posAdjective") && inDictionary(s, POS.ADJECTIVE)) || 
 									((Boolean)AlterEgo.config.get("posAdverb") && inDictionary(s, POS.ADVERB))){
@@ -328,36 +561,42 @@ public class UserProfile {
 	    return true;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static ArrayList<Unigram> extractBM25Profile(DataParser documents,
 			Profile profile, boolean usePlaintext, boolean useMetakeywords, 
 			boolean useMetadescription, boolean useTitle, boolean useTerms, boolean useCCParse) {
 		
 		//Get IDFs
-		ArrayList<String> words = new ArrayList<String>();
-		for (Unigram u: profile.getUnigrams()){
-			words.add(u.getText().toLowerCase());
-		}
-		ArrayList<DocumentFrequency> freq = GoogleSearch.getNumberOfResults(words);
+		HashMap<String, Double> freq = new HashMap<String, Double>();
+		if (AlterEgo.config.get("ngrams") == null){
+			ArrayList<String> words = new ArrayList<String>();
+			for (Unigram u: profile.getUnigrams()){
+				words.add(u.getText().toLowerCase());
+			}
+			freq = GoogleSearch.getNumberOfResults(words);
+		} else {
+			freq = (HashMap<String, Double>) AlterEgo.config.get("ngrams");
+		}	
 		System.out.println("Got IDFs");
 		
 		Pattern pattern = Pattern.compile("\\s+");
 		
 		int i = 0;
 		//HashMap<Document, ArrayList<String>> docs = new HashMap<Document, ArrayList<String>>();
-		HashMap<String, Long> docs = new HashMap<String, Long>();
+		HashMap<String, Double> docs = new HashMap<String, Double>();
 		for (Document d: documents.getDocuments()){
 			
 			i++;
 			System.out.println("Doing document " + i + " of " + documents.getDocuments().size());
 			
-			ArrayList<String> allWords = new ArrayList<String>();
+			HashMap<String, String> allWords = new HashMap<String, String>();
 			//Metakeywords
 			if (useMetakeywords){
 				for (String s: d.getMetakeywords()){
 					String[] spl = pattern.split(s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase());
 					for (String sp: spl){
-						if (!allWords.contains(sp)){
-							allWords.add(sp);
+						if (!allWords.containsKey(sp)){
+							allWords.put(sp,"");
 						}
 					}
 				}
@@ -367,18 +606,17 @@ public class UserProfile {
 				String[] spl = pattern.split(d.getMetadescription());
 				for (String s: spl){
 					String toAdd = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
-					if (!allWords.contains(toAdd)){
-						allWords.add(toAdd);
+					if (!allWords.containsKey(toAdd)){
+						allWords.put(toAdd,"");
 					}
 				}
 			}
 			//Plaintext
 			if (usePlaintext){
-				String[] spl = pattern.split(d.getPlaintext());
-				for (String s: spl){
+				for (String s: d.getPlaintext()){
 					String toAdd = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
-					if (!allWords.contains(toAdd)){
-						allWords.add(toAdd);
+					if (!allWords.containsKey(toAdd)){
+						allWords.put(toAdd,"");
 					}
 				}
 			}
@@ -387,8 +625,8 @@ public class UserProfile {
 				String[] spl = pattern.split(d.getTitle());
 				for (String s: spl){
 					String toAdd = s.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
-					if (!allWords.contains(toAdd)){
-						allWords.add(toAdd);
+					if (!allWords.containsKey(toAdd)){
+						allWords.put(toAdd,"");
 					}
 				}
 			}
@@ -398,33 +636,31 @@ public class UserProfile {
 					String[] spl = pattern.split(s);
 					for (String sp: spl){
 						String toAdd = sp.replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
-						if (!allWords.contains(toAdd)){
-							allWords.add(toAdd);
+						if (!allWords.containsKey(toAdd)){
+							allWords.put(toAdd,"");
 						}
 					}
 				}
 			}
+			
 			//CC Parse Results
 			if (useCCParse){
-				for (Sentence s: d.getParsed()){
-					for (SentenceItem item: s.getSentence()){
-						if (item.getPOS().startsWith("NN")){
-							String toAdd = item.getWord().replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
-							if (!allWords.contains(toAdd)){
-								allWords.add(toAdd);
-							}
+				for (ArrayList<String> s: d.getParsed()){
+					for (String word: s){
+						if (!allWords.containsKey(word)){
+							allWords.put(word,"");
 						}
 					}
 				}
 			}
 			
-			for (String s: allWords){
+			for (String s: allWords.keySet()){
 				if (docs.containsKey(s)){
 					docs.put(s, docs.get(s) + 1);
+				} else {
+					docs.put(s, 1.0);
 				}
 			}
-			
-			//docs.put(d, allWords);
 			
 		}
 		
@@ -433,12 +669,15 @@ public class UserProfile {
 		for (Unigram u: profile.getUnigrams()){
 		
 			i++;
-			System.out.println("Doing " + i + " out of " + profile.getUnigrams().size());
 			
 			// IDF of "the"
 			double N = 220680773.00;
 			// Changed original formula to have log of document frequency
-			double ni = Math.log(getNumberOfResults(u.getText().toLowerCase(), freq));
+			double ni = 220680773.00;
+			if (freq.containsKey(u.getText().toLowerCase())){
+				ni = freq.get(u.getText().toLowerCase());
+			}
+			ni = Math.log(ni);
 			double ri = 0;
 			if (docs.containsKey(u.getText().toLowerCase())){
 				ri = docs.get(u.getText().toLowerCase());
@@ -489,15 +728,6 @@ public class UserProfile {
 		
 		return profile.getUnigrams();
 		
-	}
-
-	private static double getNumberOfResults(String term, ArrayList<DocumentFrequency> freq) {
-		for (DocumentFrequency df: freq){
-			if (df.getTerm().equalsIgnoreCase(term)){
-				return df.getFrequency();
-			}
-		}
-		return 220680773.0;
 	}
 	
 }

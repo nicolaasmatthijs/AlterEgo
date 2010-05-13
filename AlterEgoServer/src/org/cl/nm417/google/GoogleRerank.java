@@ -3,12 +3,14 @@ package org.cl.nm417.google;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import org.cl.nm417.data.Profile;
 import org.cl.nm417.data.Unigram;
@@ -21,22 +23,28 @@ public class GoogleRerank {
 		
 		ArrayList<GoogleResult> oldResults = new ArrayList<GoogleResult>();
 		for (GoogleResult r: results){
+			r.setNewWeight(0);
 			oldResults.add(r);
 		}
-				
+		
+		Pattern p = Pattern.compile("\\s+");
+		
+		HashMap<String, Unigram> hprofile = new HashMap<String, Unigram>();
+		for (Unigram uni: profile.getUnigrams()){
+			hprofile.put(uni.getText().toLowerCase(), uni);
+		}
+		
 		for (GoogleResult result: results){
 			String resultText = (result.getTitle() + " " + result.getSummary()).replaceAll("[.,-/\"':;?()><=ÐÈ|_]", "").toLowerCase();
 			ArrayList<String> arlCommon = new ArrayList<String>();
 			int common = 0;
-			for (String s: resultText.split("\\s+")){
-				for (Unigram uni: profile.getUnigrams()){
-					if (uni.getText().toLowerCase().equals(s) && !arlCommon.contains(s)){
-						if (uniqueMatch){
-							arlCommon.add(s);
-						}
-						result.setNewWeight(result.getNewWeight() + uni.getWeight());
-						common++;
+			for (String s: p.split(resultText)){
+				if (hprofile.containsKey(s) && !arlCommon.contains(s)){
+					if (uniqueMatch){
+						arlCommon.add(s);
 					}
+					result.setNewWeight(result.getNewWeight() + hprofile.get(s).getWeight());
+					common++;
 				}
 			}
 			
@@ -47,7 +55,7 @@ public class GoogleRerank {
 		}
 		
 		results = doSort(results);
-		results = clickBased(results, visited, visitedW, profile.getUserId());
+		results = clickBased(results, visited, visitedW, profile);
 			
 		if (combineRankings){
 			if (interleaveMethod.equals("balanced")){
@@ -57,17 +65,18 @@ public class GoogleRerank {
 			}
 		}
 		
+		for (int i = 0; i < results.size(); i++){
+			results.get(i).setRank(i + 1);
+		}
+		
 		return results;
 			
 	}
 	
-	private static ArrayList<GoogleResult> clickBased(ArrayList<GoogleResult> results, boolean visited, int visitedW, String user){
+	private static ArrayList<GoogleResult> clickBased(ArrayList<GoogleResult> results, boolean visited, int visitedW, Profile profile){
 		if (visited){
-			HashMap<String, Integer> arlVisited = getURLs(user);
+			HashMap<String, Integer> arlVisited = profile.getURLs();
 			for (GoogleResult result: results){
-				if (result.getUrl().contains("ajaxian")){
-					System.out.println(result.getUrl());
-				}
 				if (arlVisited.containsKey(result.getUrl().toLowerCase())){
 					result.setNewWeight((result.getNewWeight() + 1) + visitedW * arlVisited.get(result.getUrl().toLowerCase()));
 					System.out.println(result.getUrl() + " => " + arlVisited.get(result.getUrl().toLowerCase()));
@@ -78,11 +87,12 @@ public class GoogleRerank {
 		return results;
 	}
 	
-	private static HashMap<String, Integer> getURLs(String user) {
+	public static HashMap<String, Integer> getURLs(String user) {
 		HashMap<String, Integer> arlVisited = new HashMap<String, Integer>();
+		DataInputStream in = null;
 		try{
 		    FileInputStream fstream = new FileInputStream("/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/profiles/" + user + ".url.txt");
-		    DataInputStream in = new DataInputStream(fstream);
+		    in = new DataInputStream(fstream);
 		    BufferedReader br = new BufferedReader(new InputStreamReader(in));
 		    String strLine;
 		    //Read File Line By Line
@@ -92,9 +102,16 @@ public class GoogleRerank {
 		    	  arlVisited.put(split[0],Integer.parseInt(split[1]));
 		      }
 		    }
-		    in.close();
 		}catch (Exception e){
-			System.err.println("Error: " + e.getMessage());
+			e.printStackTrace();
+		}finally {
+			if (in != null){
+				try {
+					in.close();
+				} catch (IOException e) {
+					System.err.println("Error: " + e.getMessage());
+				}
+			}
 		}
 		return arlVisited;
 	}
@@ -119,10 +136,29 @@ public class GoogleRerank {
 		});
 		return results;
 	}
+	
+	public static ArrayList<GoogleResult> doSortRelevance(ArrayList<GoogleResult> results){
+		Collections.sort(results, new Comparator<GoogleResult>(){
+			 
+			public int compare(GoogleResult g1, GoogleResult g2) {
+				if (g1.getRelevance() > g2.getRelevance()){
+	            	return -1;
+	            } else if (g1.getRelevance() == g2.getRelevance()) {
+	            	return 0;
+	            } else {
+	            	return 1;
+	            }
+	        }
+	 
+		});
+		return results;
+	}
 
-	public static ArrayList<GoogleResult> applyLM(Profile profile, ArrayList<GoogleResult> results, 
+	public static ArrayList<GoogleResult> applyLM(Profile profile, HashMap<String, Unigram> unigrams, ArrayList<GoogleResult> results, 
 			boolean interleave, String interleaveMethod, boolean lookatrank, double totalResults,
 			boolean visited, int visitedW) {
+		
+		Pattern p = Pattern.compile("\\s+");
 		
 		ArrayList<GoogleResult> oldResults = new ArrayList<GoogleResult>();
 		for (GoogleResult r: results){
@@ -133,18 +169,18 @@ public class GoogleRerank {
 			double weight = 0.0;
 			double length = 0.0;
 			String res = (result.getSummary() + " " + result.getTitle()).replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
-			for (String s: res.split("\\s+")){
-				weight += getWeight(profile, s, totalResults);
+			for (String s: p.split(res)){
+				weight += getWeight(unigrams, profile, s, totalResults);
 				length++;
 			}
 			result.setNewWeight(weight / length);
 			if (lookatrank){
 				result.setNewWeight(result.getNewWeight() / Math.log1p(1 + result.getRank()));
 			}
+			
 		}
-		
 		results = doSort(results);
-		results = clickBased(results, visited, visitedW, profile.getUserId());
+		results = clickBased(results, visited, visitedW, profile);
 		
 		if (interleave){
 			if (interleaveMethod.equals("balanced")){
@@ -245,11 +281,9 @@ public class GoogleRerank {
 		return interleaved;
 	}
 
-	private static double getWeight(Profile profile, String term, double totalResults){
-		for (Unigram u: profile.getUnigrams()){
-			if (u.getText().equalsIgnoreCase(term)){
-				return Math.log1p(u.getWeight());
-			}
+	private static double getWeight(HashMap<String, Unigram> unigrams, Profile profile, String term, double totalResults){
+		if (unigrams.containsKey(term)){
+			return Math.log1p(unigrams.get(term).getWeight());
 		}
 		return Math.log1p(1 / totalResults);
 	}
@@ -310,7 +344,7 @@ public class GoogleRerank {
 			ex.printStackTrace();
 		}
 		results = doSort(results);
-		results = clickBased(results, visited, visitedW, profile.getUserId());
+		results = clickBased(results, visited, visitedW, profile);
 		return results;
 	}
 

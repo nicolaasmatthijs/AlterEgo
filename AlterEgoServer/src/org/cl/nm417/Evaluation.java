@@ -67,7 +67,7 @@ public class Evaluation {
 		}
 	}
 	
-	public static String getRow(String[] fields, boolean bold){
+	public static String getRow(String[] fields, boolean bold, String cssClass){
 		String html = "<tr>";
 		for (String s: fields){
 			html += "<td>";
@@ -84,10 +84,13 @@ public class Evaluation {
 		return html;
 	}
 	
-	public static String getRow(ArrayList<String> fields, boolean bold){
+	public static String getRow(ArrayList<String> fields, boolean bold, String cssClass, String type){
 		String html = "<tr>";
+		if (cssClass != null){
+			html = "<tr class='" + cssClass + "'>";
+		}
 		for (String s: fields){
-			html += "<td>";
+			html += "<" + type + ">";
 			if (bold){
 				html += "<b>";
 			}
@@ -95,7 +98,7 @@ public class Evaluation {
 			if (bold){
 				html += "</b>";
 			}
-			html += "</td>";
+			html += "</" + type + ">";
 		}
 		html += "</tr>";
 		return html;
@@ -106,14 +109,7 @@ public class Evaluation {
 		int i = 0;
 		for (GoogleResult res: ranking){
 			i++;
-			GoogleSnippet snippet = null;
-			for (GoogleSnippet snip: snippets){
-				if (snip.getGRank() == res.getOriginalRank()){
-					snippet = snip;
-					res.setNewWeight(snip.getRelevance());
-				}
-			}
-			dcg += (Math.pow(2, snippet.getRelevance()) - 1) / (log2((double)(1.00 + i)));
+			dcg += (Math.pow(2, res.getRelevance()) - 1) / (log2((double)(1.00 + i)));
 		}
 		return dcg;
 	}
@@ -133,7 +129,7 @@ public class Evaluation {
 		}
 		double dcg = getDCG(snippets, newres);
 		if (N){
-			copy = GoogleRerank.doSort(copy);
+			copy = GoogleRerank.doSortRelevance(copy);
 			newres = new ArrayList<GoogleResult>();
 			i = 0;
 			for (GoogleResult res: copy){
@@ -169,6 +165,7 @@ public class Evaluation {
 			res.setOriginalRank(snip.getGRank());
 			res.setRank(snip.getGRank());
 			res.setSummary(snip.getSummary());
+			res.setRelevance(snip.getRelevance());
 			res.setTitle(snip.getTitle());
 			res.setUrl(snip.getUrl());
 			results.add(res);

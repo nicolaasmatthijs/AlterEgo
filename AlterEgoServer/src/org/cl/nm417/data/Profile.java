@@ -1,12 +1,14 @@
 package org.cl.nm417.data;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Profile {
 
 	private ArrayList<Unigram> unigrams = new ArrayList<Unigram>();
 	private String userId = "";
 	private int documents;
+	private HashMap<String, Integer> URLs = new HashMap<String, Integer>();
 	
 	public void setUnigrams(ArrayList<Unigram> unigrams) {
 		this.unigrams = unigrams;
@@ -30,6 +32,14 @@ public class Profile {
 
 	public int getDocuments() {
 		return documents;
+	}
+
+	public void setURLs(HashMap<String, Integer> uRLs) {
+		URLs = uRLs;
+	}
+
+	public HashMap<String, Integer> getURLs() {
+		return URLs;
 	}
 	
 }

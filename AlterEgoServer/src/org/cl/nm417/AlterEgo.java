@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -22,7 +23,7 @@ import org.cl.nm417.xmlparser.DataParser;
 
 public class AlterEgo {
 	
-	public static HashMap<String, Object> config;
+	public static HashMap<String, Object> config = new HashMap<String, Object>();
 	
 	public static Profile generateProfile(HashMap<String, Object> params) {
 		
@@ -43,18 +44,41 @@ public class AlterEgo {
 		
 	}
 	
+	public static Profile generateProfile(HashMap<String, Object> params, DataParser data) {
+		
+		double start = new Date().getTime();
+		config = params;
+		
+		Profile profile = processUserWithData((String)config.get("user"), data);
+		if ((Boolean)config.get("takeLog")){
+			for (Unigram u: profile.getUnigrams()){
+				u.setWeight(Math.log(u.getWeight() + 1));
+			}
+		}
+		writeFinalProfile(profile);
+		double end = new Date().getTime();
+		System.out.println("User profile generated in " + ((end - start) / 1000) + " seconds");
+		return profile;
+		
+	}
+	
 	public static ArrayList<GoogleResult> SearchGoogle(String query, String user, String profilename, 
 			boolean rerank, String method, boolean interleave, String interleaveMethod, 
 			boolean lookatrank, boolean umatching, boolean visited, int visitedW){
 		Profile profile = new Profile();
 		profile.setUserId(user);
 		profile.setUnigrams(readFinalUnigrams(user + "/" + profilename));
+		profile.setURLs(GoogleRerank.getURLs(user));
+		HashMap<String, Unigram> unigrams = new HashMap<String, Unigram>();
+		for (Unigram u: profile.getUnigrams()){
+			unigrams.put(u.getText().toLowerCase(), u);
+		}
 		ArrayList<GoogleResult> results = GoogleSearch.doGoogleSearch(query);
 		if (rerank){
 			if (method.equals("lm")){
 				double totalWords = calculateTotalWords(profile);
 				profile = calculateLMStatistics(profile, totalWords);
-				results = GoogleRerank.applyLM(profile, results, interleave, interleaveMethod, lookatrank, totalWords, visited, visitedW);
+				results = GoogleRerank.applyLM(profile, unigrams, results, interleave, interleaveMethod, lookatrank, totalWords, visited, visitedW);
 			} else if (method.equals("pclick")){
 				results = GoogleRerank.pClick(query, profile, results, interleave, interleaveMethod, lookatrank, umatching, visited, visitedW);
 			} else {
@@ -64,23 +88,23 @@ public class AlterEgo {
 		return results;
 	}
 	
-	public static ArrayList<GoogleResult> finalSearchGoogle(String query, String user,
+	public static ArrayList<GoogleResult> finalSearchGoogle(String query, Profile profile,
 		String method, boolean interleave, String interleaveMethod, 
-		boolean lookatrank, boolean visited, int visitedW, String path,
-		ArrayList<GoogleResult> fResults){
+		boolean lookatrank, boolean visited, int visitedW, ArrayList<GoogleResult> fResults){
 			ArrayList<GoogleResult> results = new ArrayList<GoogleResult>();
 			for (GoogleResult res: fResults){
 				res.setNewWeight(0);
 				results.add(res);
 			}
 			results = GoogleRerank.doSort(results);
-			Profile profile = new Profile();
-			profile.setUserId(user);
-			profile.setUnigrams(readFinalUnigrams(user + "/" + path));
+			HashMap<String, Unigram> unigrams = new HashMap<String, Unigram>();
+			for (Unigram u: profile.getUnigrams()){
+				unigrams.put(u.getText().toLowerCase(), u);
+			}
 			if (method.equals("lm")){
 				double totalWords = calculateTotalWords(profile);
 				profile = calculateLMStatistics(profile, totalWords);
-				results = GoogleRerank.applyLM(profile, results, interleave, interleaveMethod, lookatrank, totalWords, visited, visitedW);
+				results = GoogleRerank.applyLM(profile, unigrams,results, interleave, interleaveMethod, lookatrank, totalWords, visited, visitedW);
 			} else if (method.equals("pclick")){
 				results = GoogleRerank.pClick(query, profile, results, interleave, interleaveMethod, lookatrank, false, visited, visitedW);
 			} else if (method.equals("umatching")) {
@@ -100,25 +124,29 @@ public class AlterEgo {
 	}
 	
 	private static Profile calculateLMStatistics(Profile profile, double totalWords) {
+		Profile newProf = new Profile();
+		newProf.setURLs(profile.getURLs());
+		newProf.setUserId(profile.getUserId());
+		newProf.setDocuments(profile.getDocuments());
+		newProf.setUnigrams(new ArrayList<Unigram>());
 		for (Unigram u: profile.getUnigrams()){
-			u.setWeight((1 + u.getWeight()) / totalWords);
+			Unigram newU = new Unigram();
+			newU.setWeight((1 + u.getWeight()) / totalWords);
+			newU.setText(u.getText());
+			newProf.getUnigrams().add(newU);
 		}
-		return profile;
+		return newProf;
 	}
 
-	private static ArrayList<Unigram> readUnigrams(String user){
-		ArrayList<Unigram> unigrams = readFinalUnigrams(user + ".txt");
-		return unigrams;
-	}
-	
-	private static ArrayList<Unigram> readFinalUnigrams(String path){
+	public static ArrayList<Unigram> readFinalUnigrams(String path){
 		ArrayList<Unigram> unigrams = new ArrayList<Unigram>();
+		DataInputStream in = null;
 		try{
 		    // Open the file that is the first 
 		    // command line parameter
 			FileInputStream fstream = new FileInputStream("/Users/nicolaas/Desktop/AlterEgo/dataprocessing/data/profiles/" + path);
 		    // Get the object of DataInputStream
-		    DataInputStream in = new DataInputStream(fstream);
+		    in = new DataInputStream(fstream);
 		    BufferedReader br = new BufferedReader(new InputStreamReader(in));
 		    String strLine;
 		    //Read File Line By Line
@@ -131,10 +159,17 @@ public class AlterEgo {
 		    	  unigrams.add(u);
 		      }
 		    }
-		    //Close the input stream
-		    in.close();
 		}catch (Exception e){//Catch exception if any
-			System.err.println("Error: " + e.getMessage());
+		}finally {
+			 //Close the input stream
+			if (in != null){
+			    try {
+					in.close();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					System.err.println("Error: " + e.getMessage());
+				}
+			}
 		}
 		return unigrams;
 	}
@@ -259,6 +294,35 @@ public class AlterEgo {
 		} catch (Exception e){
 			System.err.println("Error: " + e.getMessage());
 		}
+		
+	}
+	
+	public static DataParser getDataParser(String userid){
+		System.out.println(userid);
+		DataParser data = new DataParser(userid);
+		return data;
+	}
+	
+	private static Profile processUserWithData(String userid, DataParser data){
+		
+		Profile profile = new Profile();
+		profile.setUserId(userid);
+		profile.setUnigrams(UserProfile.extractUnigramProfile(data, (Boolean)config.get("plaintext"), 
+				(Boolean)config.get("metakeywords"), (Boolean)config.get("metadescription"), 
+				(Boolean)config.get("title"), (Boolean)config.get("terms"), (Boolean)config.get("ccparse"),
+				(Integer)config.get("plaintextW"), (Integer)config.get("metakeywordsW"), 
+				(Integer)config.get("metadescriptionW"), (Integer)config.get("titleW"), (Integer)config.get("termsW"), 
+				(Integer)config.get("ccparseW")));
+		if (((String)config.get("weighting")).equals("bm25")){
+			profile.setUnigrams(UserProfile.extractBM25Profile(data, profile, (Boolean)config.get("plaintext"), 
+					(Boolean)config.get("metakeywords"), (Boolean)config.get("metadescription"), 
+					(Boolean)config.get("title"), (Boolean)config.get("terms"), (Boolean)config.get("ccparse")));
+		}
+		writeURLs(userid, data);
+		writePClickData(userid, data);
+		profile.setDocuments(data.getDocuments().size());
+		data = null;
+		return profile;
 		
 	}
 	

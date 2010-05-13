@@ -8,6 +8,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.regex.Pattern;
 
 import org.cl.nm417.AlterEgo;
 import org.cl.nm417.data.*;
@@ -59,6 +60,8 @@ public class XMLDataParser extends DefaultHandler {
 	private boolean parseFileExists = false;
 	
 	private Document currentDocument = new Document();
+	
+	private static final Pattern pattern = Pattern.compile("\\s+");
 	
 	//Event Handlers
 	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
@@ -163,11 +166,12 @@ public class XMLDataParser extends DefaultHandler {
 				}
 			}
 		} else if (qName.equals("document")){
-			currentDocument.setPlaintext(normalize(plaintextBuilder.toString()));
+			String pt = normalize(plaintextBuilder.toString());
+			currentDocument.setPlaintext(pattern.split(pt));
 			// Sentence splitting
 			if ((Boolean)AlterEgo.config.get("ccparse") && !parseFileExists){
 		    	try {
-		    		out.write(det.markupRawText(2, currentDocument.getPlaintext()));
+		    		out.write(det.markupRawText(2, normalize(plaintextBuilder.toString())));
 		    		/*Tokenization
 		    		String sentsplit = det.markupRawText(2, currentDocument.getPlaintext());
 		    		for (String s: sentsplit.split("\n")){
@@ -206,6 +210,10 @@ public class XMLDataParser extends DefaultHandler {
 				}
 			} catch (ParseException e) { 
 				e.printStackTrace();
+			}
+			if (currentDocument.getUrl().toLowerCase().contains("www.google.") && 
+					currentDocument.getUrl().toLowerCase().contains("q=")){
+				System.out.println("==> " + currentDocument.getUrl());
 			}
 			currentDocument = new Document();
 		} else if (qName.equals("url")){

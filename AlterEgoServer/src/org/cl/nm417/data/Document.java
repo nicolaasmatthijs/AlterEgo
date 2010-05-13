@@ -8,7 +8,7 @@ public class Document {
 	private String url = "";
 	private String visitdate = "";
 	
-	private String plaintext = "";
+	private String[] plaintext = new String[]{};
 	
 	private String metadescription = "";
 	private ArrayList<String> metakeywords = new ArrayList<String>();
@@ -21,7 +21,7 @@ public class Document {
 	private ArrayList<List> lists = new ArrayList<List>();
 	private ArrayList<Table> tables = new ArrayList<Table>();
 	private ArrayList<String> terms = new ArrayList<String>();
-	private ArrayList<Sentence> parsed = new ArrayList<Sentence>();
+	private ArrayList<ArrayList<String>> parsed = new ArrayList<ArrayList<String>>();
 	
 	public void setDuration(String duration) {
 		this.duration = duration;
@@ -39,11 +39,11 @@ public class Document {
 		return url;
 	}
 
-	public void setPlaintext(String plaintext) {
+	public void setPlaintext(String[] plaintext) {
 		this.plaintext = plaintext;
 	}
 
-	public String getPlaintext() {
+	public String[] getPlaintext() {
 		return plaintext;
 	}
 
@@ -135,11 +135,11 @@ public class Document {
 		return terms;
 	}
 
-	public void setParsed(ArrayList<Sentence> parsed) {
+	public void setParsed(ArrayList<ArrayList<String>> parsed) {
 		this.parsed = parsed;
 	}
 
-	public ArrayList<Sentence> getParsed() {
+	public ArrayList<ArrayList<String>> getParsed() {
 		return parsed;
 	}
 	

@@ -3,9 +3,9 @@ package org.cl.nm417.google;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 
 import org.cl.nm417.data.Document;
-import org.cl.nm417.data.DocumentFrequency;
 import org.cl.nm417.json.JSONObject;
 import org.cl.nm417.xmlparser.DataParser;
 import org.jredis.JRedis;
@@ -60,24 +60,28 @@ public class GoogleSearch {
 		System.out.println("*************************************");
 	}
 
-	public static ArrayList<DocumentFrequency> getNumberOfResults(ArrayList<String> words) {
+	public static HashMap<String, Double> getNumberOfResults(ArrayList<String> words) {
 		
 		try {
 			long start = new Date().getTime();
-			ArrayList<DocumentFrequency> freq = new ArrayList<DocumentFrequency>();
+			int i = 0;
+			HashMap<String, Double> freq = new HashMap<String, Double>();
 			JRedis jredis = new JRedisClient("localhost", 6379);
 			for (String s: words){
-				if (!jredis.exists(s.toLowerCase())){
-					DocumentFrequency df = new DocumentFrequency();
-		  		  	df.setTerm(s.toLowerCase());
-		  		  	df.setFrequency(220680773);
-		  		  	freq.add(df);
+				if (s != null && s.length() > 0){
+					if (!freq.containsKey(s.toLowerCase())){
+						if (jredis.exists(s.toLowerCase())){
+							try {
+								freq.put(s.toLowerCase(), Double.parseDouble(new String(jredis.get(s.toLowerCase()))));
+							} catch (Exception ex){}
+						}
+					}
 				} else {
-					double n = Double.parseDouble(new String(jredis.get(s.toLowerCase())));
-					DocumentFrequency df = new DocumentFrequency();
-		  		  	df.setTerm(s.toLowerCase());
-		  		  	df.setFrequency(n);
-		  		  	freq.add(df);
+					System.out.println("Encountered null");
+				}
+				i++;
+				if (i % 1000 == 0){
+					System.out.println("NGramming " + i + " of " + words.size());
 				}
 			}
 			long end = new Date().getTime();
@@ -140,8 +144,8 @@ public class GoogleSearch {
 		String output = "";
 		WebFile file;
 		try {
-			file = new WebFile( "http://www.google.co.uk/search?q=" + URLEncoder.encode(query, "UTF-8") + "&start=" + ((page - 1) *10));
-			output = ((String) file.getContent()).replaceAll("/images/", "http://www.google.co.uk/images/");
+			file = new WebFile( "http://www.google.co.uk/search?hl=en&client=firefox-a&hs=3LX&rls=org.mozilla%3Aen-US%3Aofficial&q=WSDM&aq=f&aqi=g2g-s1g5g-s1g1&aql=&oq=&gs_rfai=");// + URLEncoder.encode(query, "UTF-8") + "&start=" + ((page - 1) *10));
+			output = ((String) file.getContent());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

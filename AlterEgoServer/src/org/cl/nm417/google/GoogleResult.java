@@ -10,6 +10,7 @@ public class GoogleResult {
 	private int common;
 	private int originalRank;
 	private String team;
+	private double relevance;
 	
 	public void setTitle(String title) {
 		this.title = title;
@@ -73,6 +74,14 @@ public class GoogleResult {
 
 	public String getTeam() {
 		return team;
+	}
+
+	public void setRelevance(double relevance) {
+		this.relevance = relevance;
+	}
+
+	public double getRelevance() {
+		return relevance;
 	}
 	
 }

@@ -35,7 +35,16 @@ public class CCParser {
 		    			SentenceItem item = new SentenceItem(s);
 		    			sentence.getSentence().add(item);
 		    		}
-		    		documents.get(i).getParsed().add(sentence);
+		    		ArrayList<String> allWords = new ArrayList<String>();
+		    		for (SentenceItem item: sentence.getSentence()){
+						if (item.getPOS().startsWith("NN")){
+							String toAdd = item.getWord().replaceAll("[.,-/\"':;?()><=ÐÈÝ|_!]", "").toLowerCase();
+							if (!allWords.contains(toAdd)){
+								allWords.add(toAdd);
+							}
+						}
+					}
+		    		documents.get(i).getParsed().add(allWords);
 		    	}
 		    }
 		    //Close the input stream
