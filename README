@@ -1,0 +1,60 @@
+// Nicolaas Matthijs - nm417 - CSTIT //
+
+AlterEgo :: Personalized Web Search
+-----------------------------------
+
+This code is the result of a research project conducted in Easter Term 2010 
+in order to obtain the MPhil Computer Speech, Text and Internet Technology 
+at the University of Cambridge. It investigates the use of profile based 
+personalized web search using browsing history and thorough offline and 
+online evaluation in a complete and self-contained research project. It 
+involves the full research cycle and includes pre-research investigation, 
+suggesting and implementing a new personalization strategy, capturing data, 
+finding participants, two different evaluations, parameter investigation, 
+comparison to previous best systems and making the developed Firefox add-on 
+available for real-life usage.
+
+This README file gives an overview of all of the files available in this
+repository ()
+
+
+*****************************
+** 01_ProjectSpecification **
+*****************************
+
+*********************
+** 02_FirefoxAddOn **
+*********************
+
+*******************************
+** 03_PersonalizationServer **
+*******************************
+
+*********************
+** 04_3rdPartyCode **
+*********************
+
+***********************
+** 05_DataAndResults **
+***********************
+
+*****************************
+** 06_ProjectDocumentation **
+*****************************
+
+This folder contains of all of the files that try to document the overall
+project and its outcomes.
+
+++ Presentations
+
+Powerpoint presentations that were used for intermediary project presentations
+
+++ Thesis
+
+The Masters thesis that was produced as output of this project
+
+++ Conference Paper
+
+LaTeX files that contain the first draft of the conference paper extracted out
+of the produced paper. This paper, once finished, will be submitted to the
+WSDM 2011 Conference in Hong Kong.

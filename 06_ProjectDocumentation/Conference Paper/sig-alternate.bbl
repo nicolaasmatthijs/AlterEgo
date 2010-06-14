@@ -1,0 +1,235 @@
+\begin{thebibliography}{10}
+
+\bibitem{Chirita:Firan}
+P.-A. Chirita, C.~S. Firan, and W.~Nejdl.
+\newblock Summarizing local context to personalize global web search.
+\newblock In {\em CIKM '06: Proceedings of the 15th ACM international
+  conference on Information and knowledge management}, pages 287--296, New
+  York, NY, USA, 2006. ACM.
+
+\bibitem{Chirita:Nejdl}
+P.~A. Chirita, W.~Nejdl, R.~Paiu, and C.~Kohlsch\"{u}tter.
+\newblock Using odp metadata to personalize search.
+\newblock In {\em SIGIR '05: Proceedings of the 28th annual international ACM
+  SIGIR conference on Research and development in information retrieval}, pages
+  178--185, New York, NY, USA, 2005. ACM.
+
+\bibitem{Clark:Curran}
+S.~Clark and J.~R. Curran.
+\newblock Wide-coverage efficient statistical parsing with ccg and log-linear
+  models.
+\newblock {\em Comput. Linguist.}, 33(4):493--552, 2007.
+
+\bibitem{Claypool:Le}
+M.~Claypool, P.~Le, M.~Wased, and D.~Brown.
+\newblock Implicit interest indicators.
+\newblock In {\em IUI '01: Proceedings of the 6th international conference on
+  Intelligent user interfaces}, pages 33--40, New York, NY, USA, 2001. ACM.
+
+\bibitem{Cronen:Townsend}
+S.~Cronen-Townsend and W.~B. Croft.
+\newblock Quantifying query ambiguity.
+\newblock In {\em Proceedings of the second international conference on Human
+  Language Technology Research}, pages 104--109, San Francisco, CA, USA, 2002.
+  Morgan Kaufmann Publishers Inc.
+
+\bibitem{Daoud:Lechani}
+M.~Daoud, L.~Tamine-Lechani, and M.~Boughanem.
+\newblock Learning user interests for a session-based personalized search.
+\newblock In {\em IIiX '08: Proceedings of the second international symposium
+  on Information interaction in context}, pages 57--64, New York, NY, USA,
+  2008. ACM.
+
+\bibitem{Daoud:Tamine}
+M.~Daoud, L.~Tamine-Lechani, M.~Boughanem, and B.~Chebaro.
+\newblock A session based personalized search using an ontological user
+  profile.
+\newblock In {\em SAC '09: Proceedings of the 2009 ACM symposium on Applied
+  Computing}, pages 1732--1736, New York, NY, USA, 2009. ACM.
+
+\bibitem{Dou:Song}
+Z.~Dou, R.~Song, and J.-R. Wen.
+\newblock A large-scale evaluation and analysis of personalized search
+  strategies.
+\newblock In {\em WWW '07: Proceedings of the 16th international conference on
+  World Wide Web}, pages 581--590, New York, NY, USA, 2007. ACM.
+
+\bibitem{Gauch:Chaffee}
+S.~Gauch, J.~Chaffee, and A.~Pretschner.
+\newblock Ontology-based personalized search and browsing.
+\newblock {\em Web Intelli. and Agent Sys.}, 1(3-4):219--234, 2003.
+
+\bibitem{Teevan:Potential}
+T.~Jaime, D.~Susan, and H.~Eric.
+\newblock Potential for personalization.
+\newblock {\em ACM Trans. Comput.-Hum. Interact.}, 17(1):31, March 2010.
+
+\bibitem{Jansen:Spink}
+B.~J. Jansen, A.~Spink, and T.~Saracevic.
+\newblock Real life, real users, and real needs: a study and analysis of user
+  queries on the web.
+\newblock {\em Inf. Process. Manage.}, 36(2):207--227, 2000.
+
+\bibitem{Joachims:Opt}
+T.~Joachims.
+\newblock Optimizing search engines using clickthrough data.
+\newblock In {\em KDD '02: Proceedings of the eighth ACM SIGKDD international
+  conference on Knowledge discovery and data mining}, pages 133--142, New York,
+  NY, USA, 2002. ACM.
+
+\bibitem{Joachims:Thorsten}
+T.~Joachims.
+\newblock Optimizing search engines using clickthrough data.
+\newblock In {\em KDD '02: Proceedings of the eighth ACM SIGKDD international
+  conference on Knowledge discovery and data mining}, pages 133--142, New York,
+  NY, USA, 2002. ACM.
+
+\bibitem{Joachims:Granka}
+T.~Joachims, L.~Granka, B.~Pan, H.~Hembrooke, F.~Radlinski, and G.~Gay.
+\newblock Evaluating the accuracy of implicit feedback from clicks and query
+  reformulations in web search.
+\newblock {\em ACM Transactions on Information Systems (TOIS)}, 25(2), April
+  2007.
+
+\bibitem{Liu:Yu}
+F.~Liu, C.~Yu, and W.~Meng.
+\newblock Personalized web search by mapping user queries to categories.
+\newblock In {\em CIKM '02: Proceedings of the eleventh international
+  conference on Information and knowledge management}, pages 558--565, New
+  York, NY, USA, 2002. ACM.
+
+\bibitem{Liu:Yubis}
+F.~Liu, C.~Yu, and W.~Meng.
+\newblock Personalized web search for improving retrieval effectiveness.
+\newblock {\em IEEE Trans. on Knowl. and Data Eng.}, 16(1):28--40, 2004.
+
+\bibitem{Morita:Shinoda}
+M.~Morita and Y.~Shinoda.
+\newblock Information filtering based on user behavior analysis and best match
+  text retrieval.
+\newblock In {\em SIGIR '94: Proceedings of the 17th annual international ACM
+  SIGIR conference on Research and development in information retrieval}, pages
+  272--281, New York, NY, USA, 1994. Springer-Verlag New York, Inc.
+
+\bibitem{Pretschner:Gauch}
+A.~Pretschner and S.~Gauch.
+\newblock Ontology based personalized search.
+\newblock In {\em ICTAI '99: Proceedings of the 11th IEEE International
+  Conference on Tools with Artificial Intelligence}, page 391, Washington, DC,
+  USA, 1999. IEEE Computer Society.
+
+\bibitem{Qiu:Cho}
+F.~Qiu and J.~Cho.
+\newblock Automatic identification of user interest for personalized search.
+\newblock In {\em WWW '06: Proceedings of the 15th international conference on
+  World Wide Web}, pages 727--736, New York, NY, USA, 2006. ACM.
+
+\bibitem{Radlinski:Craswell}
+F.~Radlinski and N.~Craswell.
+\newblock Comparing the sensitivity of information retrieval metrics.
+\newblock In {\em To appear in Proceedings of SIGIR 2010}. Association for
+  Computing Machinery, Inc., 2010.
+
+\bibitem{Radlinski:Kurup}
+F.~Radlinski, M.~Kurup, and T.~Joachims.
+\newblock How does clickthrough data reflect retrieval quality?
+\newblock In {\em CIKM '08: Proceeding of the 17th ACM conference on
+  Information and knowledge management}, pages 43--52, New York, NY, USA, 2008.
+  ACM.
+
+\bibitem{Sanderson:Mark}
+M.~Sanderson.
+\newblock Ambiguous queries: test collections need more sense.
+\newblock In {\em SIGIR '08: Proceedings of the 31st annual international ACM
+  SIGIR conference on Research and development in information retrieval}, pages
+  499--506, New York, NY, USA, 2008. ACM.
+
+\bibitem{Shen:Tan}
+X.~Shen, B.~Tan, and C.~Zhai.
+\newblock Implicit user modeling for personalized search.
+\newblock In {\em CIKM '05: Proceedings of the 14th ACM international
+  conference on Information and knowledge management}, pages 824--831, New
+  York, NY, USA, 2005. ACM.
+
+\bibitem{Sieg:Mobasher}
+A.~Sieg, B.~Mobasher, and R.~Burke.
+\newblock Web search personalization with ontological user profiles.
+\newblock In {\em CIKM '07: Proceedings of the sixteenth ACM conference on
+  Conference on information and knowledge management}, pages 525--534, New
+  York, NY, USA, 2007. ACM.
+
+\bibitem{Silverstein:Marais}
+C.~Silverstein, H.~Marais, M.~Henzinger, and M.~Moricz.
+\newblock Analysis of a very large web search engine query log.
+\newblock {\em SIGIR Forum}, 33(1):6--12, 1999.
+
+\bibitem{Speretta:Gauch}
+M.~Speretta and S.~Gauch.
+\newblock Personalized search based on user search histories.
+\newblock In {\em WI '05: Proceedings of the 2005 IEEE/WIC/ACM International
+  Conference on Web Intelligence}, pages 622--628, Washington, DC, USA, 2005.
+  IEEE Computer Society.
+
+\bibitem{Sriram:Shen}
+S.~Sriram, X.~Shen, and C.~Zhai.
+\newblock A session-based search engine.
+\newblock In {\em SIGIR '04: Proceedings of the 27th annual international ACM
+  SIGIR conference on Research and development in information retrieval}, pages
+  492--493, New York, NY, USA, 2004. ACM.
+
+\bibitem{Sugiyama:Hatano}
+K.~Sugiyama, K.~Hatano, and M.~Yoshikawa.
+\newblock Adaptive web search based on user profile constructed without any
+  effort from users.
+\newblock In {\em WWW '04: Proceedings of the 13th international conference on
+  World Wide Web}, pages 675--684, New York, NY, USA, 2004. ACM.
+
+\bibitem{Sun:Zeng}
+J.-T. Sun, H.-J. Zeng, H.~Liu, Y.~Lu, and Z.~Chen.
+\newblock Cubesvd: a novel approach to personalized web search.
+\newblock In {\em WWW '05: Proceedings of the 14th international conference on
+  World Wide Web}, pages 382--390, New York, NY, USA, 2005. ACM.
+
+\bibitem{Tanudjaja:Mui}
+F.~Tanudjaja and L.~Mui.
+\newblock Persona: A contextualized and personalized web search.
+\newblock In {\em HICSS '02: Proceedings of the 35th Annual Hawaii
+  International Conference on System Sciences (HICSS'02)-Volume 3}, page~67,
+  Washington, DC, USA, 2002. IEEE Computer Society.
+
+\bibitem{Teevan:Main}
+J.~Teevan, S.~T. Dumais, and E.~Horvitz.
+\newblock Personalizing search via automated analysis of interests and
+  activities.
+\newblock In {\em SIGIR '05: Proceedings of the 28th annual international ACM
+  SIGIR conference on Research and development in information retrieval}, pages
+  449--456, New York, NY, USA, 2005. ACM.
+
+\bibitem{Teevan:ToOrNot}
+J.~Teevan, S.~T. Dumais, and D.~J. Liebling.
+\newblock To personalize or not to personalize: modeling queries with variation
+  in user intent.
+\newblock In {\em SIGIR '08: Proceedings of the 31st annual international ACM
+  SIGIR conference on Research and development in information retrieval}, pages
+  163--170, New York, NY, USA, 2008. ACM.
+
+\bibitem{Thomas:Hawking}
+P.~Thomas and D.~Hawking.
+\newblock Evaluation by comparing result sets in context.
+\newblock In {\em CIKM '06: Proceedings of the 15th ACM international
+  conference on Information and knowledge management}, pages 94--101, New York,
+  NY, USA, 2006. ACM.
+
+\bibitem{Vu:Ti}
+A.~T.~A. Thuy~Vu and M.~Zhang.
+\newblock Term extraction through unithood and termhood unification.
+\newblock In {\em Proceedings of the 3rd International Joint Conference on
+  Natural Language Processing (IJCNLP-08)}, Hyderabad, India, 2008.
+
+\bibitem{Teevan:Value}
+R.~W. White and S.~M. Drucker.
+\newblock Investigating behavioral variability in web search.
+\newblock In {\em WWW '07: Proceedings of the 16th international conference on
+  World Wide Web}, pages 21--30, New York, NY, USA, 2007. ACM.
+
+\end{thebibliography}
