@@ -1,7 +1,0 @@
-content   alterego                 chrome/content/
-skin      alterego   classic/1.0   chrome/skin/
-locale    alterego   en-US         chrome/locale/en-US/
-
-
-overlay   chrome://browser/content/browser.xul   chrome://alterego/content/ff-overlay.xul
-style chrome://global/content/customizeToolbar.xul chrome://alterego/skin/overlay.css

@@ -1,8 +1,0 @@
-<!ENTITY alterego.label "About AlterEgo">
-<!ENTITY alteregoContext.label "Your Menuitem">
-<!ENTITY alteregoContext.accesskey "Y">
-<!ENTITY alteregoToolbarButton.label "Your Toolbar Button">
-<!ENTITY alteregoToolbarButton.tooltip "This is your toolbar button!">
-<!ENTITY alteregoSidebar.label "Your Sidebar">
-<!ENTITY alteregoToolbar.name  "example">
-<!ENTITY alteregoToolbar.label "This is an example toolbar. You can hide it under View &gt; toolbars &gt; &alteregoToolbar.name;">
