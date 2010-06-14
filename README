@@ -17,6 +17,9 @@ available for real-life usage.
 This README file gives an overview of all of the files available in this
 repository (http://github.com/nicolaasmatthijs/AlterEgo)
 
+///////////////////
+// File Overview //
+///////////////////
 
 *****************************
 ** 01_ProjectSpecification **
@@ -42,6 +45,35 @@ Workplan outlining the proposed ideas, goals and timeline
 ** 04_3rdPartyCode **
 *********************
 
+This folder contains references to the different 3rd party tools that were
+used for the implementation of this project.
+
+++ ccparser
+
+The Clark & Currant statistical natural language parser is used to parse the
+text present on web pages in order to extract noun phrases.
+
+++ google-n-gram-corpus
+
+The Google N-Gram corpus is used to estimate the number of occurences of an
+N-Gram on the web.
+
+++ memcached-1.4.5
+++ redis-1.2.6
+
+Redis is a caching framework built on top of MemCacheD that is used to store the 
+Google N-Gram corpus in memory and perform extremely fast retrieval of entries from
+the corpus.
+
+++ opennlp-tools-1.3.0
+
+The OpenNLP Tools are used for sentence splitting and tokenization to prepare text
+for parsing.
+
+++ wordnet-3.0
+
+The lexical database WordNet is used to filter a list of terms on Part of Speech.
+
 ***********************
 ** 05_DataAndResults **
 ***********************
@@ -66,3 +98,9 @@ The Masters thesis that was produced as output of this project
 LaTeX files that contain the first draft of the conference paper extracted out
 of the produced paper. This paper, once finished, will be submitted to the
 WSDM 2011 Conference in Hong Kong.
+
+
+/////////////////////////
+// Installation Manual //
+/////////////////////////
+
