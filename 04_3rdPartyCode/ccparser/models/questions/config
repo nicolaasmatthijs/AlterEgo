@@ -1,3 +1,0 @@
-printer = "prolog"
-parser-question_rules = true
-parser-seen_rules = false
