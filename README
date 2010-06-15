@@ -40,6 +40,20 @@ Workplan outlining the proposed ideas, goals and timeline
 ** 02_FirefoxAddOn **
 *********************
 
+++ Add-On
+
+Code for the AlterEgo Firefox add-on.
+
+++ DataStorage
+
+Scripts that are responsible for saving a user's browsing history into
+a database.
+
+++ Website
+
+Files for the website that was used to present the project and recruit people
+to participate in the experiments.
+
 *******************************
 ** 03_PersonalizationServer **
 *******************************
