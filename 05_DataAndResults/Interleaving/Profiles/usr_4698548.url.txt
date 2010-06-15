@@ -1,0 +1,12 @@
+http://www.hln.be/ => 1
+http://sn122w.snt122.mail.live.com/im/pages/im.aspx => 1
+http://sn122w.snt122.mail.live.com/im/pages/ToastFull.aspx => 1
+http://ad.doubleclick.net/adi/N4472.MSN2_be/B4481749.19;sz=160x600;ord=159022904?click=http://clk.atdmt.com/goiframe/66324701.163018293/133865768/direct/01%3fhref= => 1
+http://sn122w.snt122.mail.live.com/im/pages/ToastMini.aspx => 1
+http://sn122w.snt122.mail.live.com/default.aspx?wa=wsignin1.0 => 5
+http://sn122w.snt122.mail.live.com/mail/InboxLight.aspx?FolderID=00000000-0000-0000-0000-000000000001&InboxSortAscending=False&InboxSortBy=Date&n=1808837570 => 3
+http://sn122w.snt122.mail.live.com/im/pages/BuddyList.aspx => 2
+http://view.atdmt.com/PPB/iview/133865768/direct;wi.160;hi.600/01?click= => 1
+http://www.hln.be/static/nmc/adv/frameset/partners/worldofgaming.html => 1
+http://www.hln.be/vacature/hln-banner1.html => 1
+http://sn122w.snt122.mail.live.com/mail/HistoryFrame.hotmail_15.1.3059.0405.html?pf=pf#mid//mad//fid/00000000-0000-0000-0000-000000000001/sBy/Date/sAsc/false/pDir/FirstPage/pSkip/0/aMid/00000000-0000-0000-0000-000000000000/aDate//pCur/1/pMid/0/isSrch/false/srchKw/ => 1

@@ -1,0 +1,3 @@
+http://news.google.com/ => 1
+http://fastflip.googlelabs.com/embed?source=news => 1
+about:sessionrestore => 1

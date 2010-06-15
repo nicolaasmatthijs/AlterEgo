@@ -95,6 +95,21 @@ The lexical database WordNet is used to filter a list of terms on Part of Speech
 ** 05_DataAndResults **
 ***********************
 
+++ Usage Data
+
+Summary of the data collected by the Firefox add-on. 
+
+++ Relevance Judgements
+
+All documents related to the relevance judgements evaluation. This contains the
+document that was given to the participants in the offline relevance judgements
+sessions and the processed results coming out of that.
+
+++ Interleaving
+
+Contains all of the results coming out of the online interleaved evaluation
+session.
+
 *****************************
 ** 06_ProjectDocumentation **
 *****************************

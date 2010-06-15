@@ -1,0 +1,13 @@
+http://wizzair.com/checkin/checkin/confirm.asp => 1
+http://wizzair.com/skylights/cgi-bin/skylights.cgi?sid=&module=SB&page=COMPACT&language=EN => 3
+http://wizzair.com/checkin/?language=EN => 1
+http://wizzair.com/checkin/checkin/ => 1
+http://www.google.co.uk/search?q=Radlinski&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-GB:official&client=firefox-a => 3
+http://wizzair.com/skylights/cgi-bin/skylights.cgi => 1
+http://wizzair.com/ => 1
+http://wizzair.com/checkin/checkin/default.asp => 1
+http://wizzair.com/skylights/cgi-bin/skylights.cgi?sid=A12f27b495436a8bbd0f29d2c359b435757a8ac482&module=SB&page=COMPACT&language=EN => 2
+http://www.google.co.uk/compressiontest/gzip.html => 2
+http://wizzair.com/skylights/cgi-bin/skylights.cgi?sid=&event=submitToAPIS&module=C3&page=PNR_LOOKUP&pnr2=L3W1EB&firstName=FILIP&lastName=RADLINSKI&origin=NYO&destination=WAW&language=EN&fromCheckinPageFlag=1 => 1
+http://www.google.co.uk/search?q=Radlinski+Kris&ie=utf-8&oe=utf-8&aq=t&rls=org.mozilla:en-GB:official&client=firefox-a => 1
+http://www.bing.com/ => 2
