@@ -1,3 +1,17 @@
+/*
+##############################################################################
+#
+# Copyright (c) 2010 Nicolaas Matthijs (nm417)
+# All Rights Reserved.
+#
+##############################################################################
+
+# AlterEgo Firefox add-on main code. This file is responsible for storing
+# a user's browsing history, re-ranking search results and miscellaneous
+# user experience related actions
+
+*/
+
 var alterego = {
 
   /////////////////////////////

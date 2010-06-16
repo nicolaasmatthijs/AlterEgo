@@ -1,4 +1,15 @@
 <?php
+/*
+##############################################################################
+#
+# Copyright (c) 2010 Nicolaas Matthijs (nm417)
+# All Rights Reserved.
+#
+##############################################################################
+
+# Script used to generate the AlterEgo database
+
+*/
 
 	include 'config.php';
 

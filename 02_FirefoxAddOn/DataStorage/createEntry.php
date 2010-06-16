@@ -1,4 +1,15 @@
 <?php 
+/*
+##############################################################################
+#
+# Copyright (c) 2010 Nicolaas Matthijs (nm417)
+# All Rights Reserved.
+#
+##############################################################################
+
+# Script used to save a visited page into a user's browsing history
+
+*/
 
 include 'config.php';
 

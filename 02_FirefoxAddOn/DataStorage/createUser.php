@@ -1,4 +1,16 @@
 <?php 
+/*
+##############################################################################
+#
+# Copyright (c) 2010 Nicolaas Matthijs (nm417)
+# All Rights Reserved.
+#
+##############################################################################
+
+# Script used to create a table for a new user. This table will then
+# be used to save that user's browsing history.
+
+*/
 
 include 'config.php';
 
