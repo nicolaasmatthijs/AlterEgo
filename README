@@ -54,9 +54,29 @@ a database.
 Files for the website that was used to present the project and recruit people
 to participate in the experiments.
 
-*******************************
+******************************
 ** 03_PersonalizationServer **
-*******************************
+******************************
+
+++ Data Extraction
+
+All script necessairy for processing a user's browsing history and extracting
+some of the structure into a large XML user document.
+
+++ Term Extraction
+
+Re-implemenation of the Vu term extraction algorithm using the web.py python.
+webserver
+
+++ JAR Files
+
+List of JAR files used by the AlterEgo personalization server.
+
+++ Personalization
+
+Main project output. This server, written in Java, does data processing,
+profile generation, searching, result re-ranking, evaluation and evaluation
+processing. This code also includes the MIT WordNet API.
 
 *********************
 ** 04_3rdPartyCode **
