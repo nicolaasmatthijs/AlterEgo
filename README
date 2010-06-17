@@ -160,18 +160,66 @@ WSDM 2011 Conference in Hong Kong.
 ** Checking out the code **
 ***************************
 
+1) Install GIT (http://git-scm.com/)
+
+2) Check out the Personalized Search code from git@github.com:nicolaasmatthijs/AlterEgo.git
+
 ********************************
 ** Installing 3rd Party Tools **
 ********************************
+
+3) Install Memcached (see 04_3rdPartyCode/memcached-1.4.5)
+
+4) Install the Redis caching server (see 04_3rdPartyCode/redis-1.2.6)
+
+5) Start the Redis server using redis.sh
+
+6) Install the Clark & Curran Statistical Natural Language Parser (see 04_3rdPartyCode/ccparser)
+
+7) Download the models file required for the Clark & Curran Statistical Natural Language Parser
+
+8) Download the latest version of the lexical database WordNet (see 04_3rdPartyCode/wordnet-3.0)
 
 ********************
 ** Firefox add-on **
 ********************
 
+9) Install MySQL
+
+10) Put the files found in 02_FirefoxAddOn/Website on an Apache server
+
+11) Update the configuration parameters in 02_FirefoxAddOn/Website/config.php
+
+12) Put the files found in 02_FirefoxAddOn/DataStorage on an Apache server
+
+13) Update the configuration parameters in 02_FirefoxAddOn/DataStorage/config.php
+
 *********************
 ** Data processing **
 *********************
 
+14) Put the files found in 03_PersonalizationServer/Data Extraction onto an Apache server
+
+15) Put the term extraction script found in 03_PersonalizationServer/Term Extraction on a server that support python
+
+16) Start the term extraction script by calling Term Extraction/web.py
+
 ***********************
 ** Re-ranking server **
 ***********************
+
+17) Install the main personalization server found at 03_PersonalizationServer/Personalization on a Tomcat 6 web server
+
+18) Add the JAR files found in 03_PersonalizationServer/JAR Files to the TomCat shared/lib folder
+
+19) Update the configuration file at AlterEgoServer/build/src/org/cl/nm417/config/config.properties to comply with the local installation
+
+20) Start the Personalization server
+
+21) The following pages represent the main functionality
+	 * index.html				Main personalization User Interface
+	 * indexEvaluate.html		Relevance judgements experiment User Interface
+	 * generateProfiles.jsp		Generate all profile for the Relevance judgements experiment
+	 * results.jsp				Relevance judgements experiment result processing
+	 * profilegenerator.jsp		Script used to continously keep user profiles up to date
+	 * interleavingresults.jsp	Process the results from the online interleaved evaluation
