@@ -1,0 +1,44 @@
+<!-- 
+/*
+ * Copyright (c) 2010 Nicolaas Matthijs (nm417)
+ * All Rights Reserved.
+ */
+ 
+/**
+ * Main page containing the relevance judgements evaluation environment
+ */
+ -->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<title>AlterEgo 0.2</title>
+<script type="text/javascript" language="JavaScript">
+
+		// Resize and reposition the current browser window
+		window.parent.focus();
+		window.parent.moveTo(1,1);
+		window.parent.resizeTo(screen.width, 300);	
+
+		// Open a popup window and position it underneath the main window
+		var win = window.open('about:blank','Content', 'width=' + screen.width + ',height=400,menubar=no,status=no,location=no,toolbar=no,scrollbars=yes');			
+		win.moveTo(1,300);
+		window.parent.focus();
+		
+</script>
+</head>
+<frameset rows="60px,*" cols="100%" FRAMESPACING="5" BORDER="1">
+	<!-- User selection and query submission -->
+    <frame src="indexEvaluate.jsp" name="index"/>
+    <frameset rows="100%" cols="100%" FRAMESPACING="1" BORDER="1">
+    	<!-- This is where the actual evaluations happen -->
+    	<frame src="evaluate.jsp" name="output"/>
+    </frameset>
+    <noframes>
+    	<body>
+    		<p>This page uses frames. The current browser you are using does not support frames.</p>
+    	</body>
+    </noframes>
+</frameset>
+</html>
